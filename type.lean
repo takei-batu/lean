@@ -94,3 +94,40 @@ def g (s : String) : Bool := s.length > 0
 
 --  shortcut above implemtation
 #check fun (g : String → Bool) (f : Nat → String) (x : Nat) => g (f x)
+
+/- Definitions -/
+
+def double (x : Nat) : Nat := x + x
+#eval double 3
+
+#eval (fun x => x + x) 3
+
+-- def double : Nat → Nat := fun x => x + x
+-- #eval double 3
+
+def add (x y : Nat) :=
+  x + y
+#eval add 3 2
+
+-- def add (x : Nat) (y : Nat) := x + y
+#eval add (double 3) (7 + 9)
+
+def doTwice (f : Nat → Nat) (x : Nat) : Nat := f (f x)
+#eval doTwice double 2
+
+def compose (α β γ : Type) (g : β → γ) (f : α → β) (x : α) : γ :=
+  g (f x)
+def square (x : Nat) : Nat :=
+  x * x
+#eval compose Nat Nat Nat double square 3
+
+/- Local Definitions -/
+
+#check let y := 2 + 2; y * y
+#eval  let y := 2 + 2; y * y
+
+def twice_double (x : Nat) : Nat := let y := x + x; y * y
+#eval twice_double 2
+
+#check let y := 2 + 2; let z := y + y; z * z
+#eval  let y := 2 + 2; let z := y + y; z * z
