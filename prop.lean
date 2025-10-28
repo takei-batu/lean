@@ -34,9 +34,9 @@ theorem t1 : p → q → p := fun hp : p => fun hq : q => hp
 #print t1
 
 theorem t2 : p → q → p :=
-  fun hp : p =>
-  fun hq : q =>
-  show p from hp
+  fun hp : p => -- suppose p
+  fun hq : q => -- suppose q
+    show p from hp -- get q -> p from q by DR, then get p -> q -> p from q -> p by DR
 
 theorem t3 (hp : p) (hq : q) : p := hp
 #print t3
@@ -54,9 +54,9 @@ variable (p q r s : Prop)
 variable (h : r → s)
 #check t5 (r → s) (s → r) h
 
-theorem t6 (h₁ : q → r) (h₂ : p → q) : p → r :=
-  fun h₃ : p =>
-  show r from h₁ (h₂ h₃)
+theorem t6 (h₁ : p → q) (h₂ : q → r) : p → r :=
+  fun h : p => -- suppose p
+    show r from h₂ (h₁ h) -- get q from p -> q and p by MP, then get r from q -> r and q by MP
 
 variable (p q r: Prop)
 #check t6 p q r
