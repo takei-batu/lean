@@ -11,7 +11,7 @@ end
 example (hpq : p → q) (hnq : ¬q) : ¬p :=
   fun hp : p => show False from hnq (hpq hp)
 
--- p ∧ ¬p → q
+-- p → ¬p → q
 example (hp : p) (hnp : ¬p) : q := False.elim (hnp hp)
 example (hp : p) (hnp : ¬p) : q := absurd hp hnp
 
