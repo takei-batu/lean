@@ -12,6 +12,9 @@ def b2 : Bool := false
 #check n + 0
 #check m * (n + 0)
 #check b1
+#check (0, 0)
+#check false
+#check False
 
 -- "&&" is the Boolean and
 #check b1 && b2
@@ -88,6 +91,7 @@ def f (n : Nat) : String := toString n
 def g (s : String) : Bool := s.length > 0
 
 #check fun x : Nat => x -- the identity function on Nat
+set_option linter.unusedVariables false
 #check fun x : Nat => true --  the constant function that always returns true
 #check fun x : Nat => g (f x) --  the composition of f and g
 #check fun x => g (f x) -- infer the type of lamda function from definition
