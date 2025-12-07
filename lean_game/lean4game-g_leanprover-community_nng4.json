@@ -28,7 +28,26 @@
     "MyNat.zero_ne_succ",
     "MyNat.zero_ne_one",
     "symm",
-    "MyNat.one_ne_zero"
+    "MyNat.one_ne_zero",
+    "MyNat.add_left_comm",
+    "simp",
+    "simp_add",
+    "MyNat.pred_succ",
+    "trivial",
+    "MyNat.is_zero_succ",
+    "MyNat.is_zero_zero",
+    "MyNat.succ_ne_zero",
+    "contrapose",
+    "contrapose!",
+    "MyNat.succ_ne_succ",
+    "decide",
+    "MyNat.add_right_cancel",
+    "MyNat.add_left_cancel",
+    "MyNat.add_left_eq_self",
+    "MyNat.add_right_eq_self",
+    "cases",
+    "MyNat.add_right_eq_zero",
+    "MyNat.add_left_eq_zero"
   ],
   "readIntro": false,
   "data": {
@@ -353,6 +372,207 @@
             "selectionStartColumn": 27,
             "positionLineNumber": 4,
             "positionColumn": 27
+          }
+        ],
+        "help": []
+      },
+      "readIntro": false
+    },
+    "Algorithm": {
+      "1": {
+        "code": "induction c with k h\r\n· repeat rw[add_zero]\r\n  exact add_comm a b\r\n· repeat rw[add_succ]\r\n  rw[h]\r\n  rfl",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 6,
+            "selectionStartColumn": 6,
+            "positionLineNumber": 6,
+            "positionColumn": 6
+          }
+        ],
+        "help": []
+      },
+      "2": {
+        "code": "repeat rw[add_assoc]\r\nrw[add_left_comm b c]\r\nrw[add_comm b d]\r\nrfl",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 4,
+            "selectionStartColumn": 4,
+            "positionLineNumber": 4,
+            "positionColumn": 4
+          }
+        ],
+        "help": []
+      },
+      "3": {
+        "code": "simp only [add_left_comm, add_comm]",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 10,
+            "positionLineNumber": 1,
+            "positionColumn": 10
+          }
+        ],
+        "help": []
+      },
+      "4": {
+        "code": "simp_add",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 9,
+            "positionLineNumber": 1,
+            "positionColumn": 9
+          }
+        ],
+        "help": []
+      },
+      "5": {
+        "code": "rw[←pred_succ a]\r\nrw[←pred_succ b]\r\nrw[h]\r\nrfl",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 4,
+            "selectionStartColumn": 4,
+            "positionLineNumber": 4,
+            "positionColumn": 4
+          }
+        ],
+        "help": []
+      },
+      "6": {
+        "code": "intro h\r\nrw[← is_zero_succ a]\r\nrw[h]\r\nrw[is_zero_zero]\r\ntrivial",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 5,
+            "selectionStartColumn": 8,
+            "positionLineNumber": 5,
+            "positionColumn": 8
+          }
+        ],
+        "help": []
+      },
+      "7": {
+        "code": "contrapose! h\r\napply succ_inj at h\r\nexact h",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 3,
+            "selectionStartColumn": 8,
+            "positionLineNumber": 3,
+            "positionColumn": 8
+          }
+        ],
+        "help": []
+      },
+      "8": {
+        "code": "decide",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 7,
+            "positionLineNumber": 1,
+            "positionColumn": 7
+          }
+        ],
+        "help": []
+      },
+      "9": {
+        "code": "decide",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 7,
+            "positionLineNumber": 1,
+            "positionColumn": 7
+          }
+        ],
+        "help": []
+      },
+      "readIntro": false
+    },
+    "AdvAddition": {
+      "1": {
+        "code": "induction n with k h\r\n· intro h0\r\n  -- repeat rw[add_zero] at h0\r\n  simp[add_zero] at h0\r\n  exact h0\r\n· intro hk\r\n  -- repeat rw[add_succ] at hk\r\n  -- apply succ_inj at hk\r\n  simp[add_succ] at hk\r\n  apply h at hk\r\n  exact hk\r\n",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 5,
+            "selectionStartColumn": 11,
+            "positionLineNumber": 5,
+            "positionColumn": 11
+          }
+        ],
+        "help": []
+      },
+      "2": {
+        "code": "simp[add_comm]\r\nexact add_right_cancel a b n",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 15,
+            "positionLineNumber": 1,
+            "positionColumn": 15
+          }
+        ],
+        "help": []
+      },
+      "3": {
+        "code": "nth_rewrite 2 [← zero_add y]\r\nexact add_right_cancel x 0 y",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 2,
+            "selectionStartColumn": 29,
+            "positionLineNumber": 1,
+            "positionColumn": 1
+          }
+        ],
+        "help": []
+      },
+      "4": {
+        "code": "nth_rewrite 2 [← add_zero x]\r\nexact add_left_cancel y 0 x",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 2,
+            "selectionStartColumn": 28,
+            "positionLineNumber": 2,
+            "positionColumn": 28
+          }
+        ],
+        "help": []
+      },
+      "5": {
+        "code": "cases b with d\r\n· rw[add_zero]\r\n  intro h\r\n  exact h\r\n· intro h\r\n  contrapose! h\r\n  intro g\r\n  rw[add_succ] at g\r\n  apply succ_ne_zero (a + d)\r\n  exact g",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 9,
+            "selectionStartColumn": 16,
+            "positionLineNumber": 9,
+            "positionColumn": 16
+          }
+        ],
+        "help": []
+      },
+      "6": {
+        "code": "rw[add_comm]\r\nexact add_right_eq_zero b a",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 2,
+            "selectionStartColumn": 28,
+            "positionLineNumber": 2,
+            "positionColumn": 28
           }
         ],
         "help": []
