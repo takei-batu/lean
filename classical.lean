@@ -5,6 +5,7 @@ variable (p : Prop)
 -- excluded middle (EM)
 #check em
 #check em p
+#check ¬ (p ∧ ¬ p)
 
 -- double-negation elimination (DNE)
 -- ¬¬p → p
