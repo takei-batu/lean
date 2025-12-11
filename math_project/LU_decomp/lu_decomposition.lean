@@ -76,6 +76,7 @@ def solv_with_LU (n : Nat) (A : Matrix n n) (b : Matrix n 1) : (Matrix n 1) := I
 
 section test
 
+-- 2行目と3行目は入れ替え済み
 def A : Matrix 3 3 := Matrix.of #[
   #[2, 3, 4],
   #[4, 3, 29],
