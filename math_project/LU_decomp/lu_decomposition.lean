@@ -3,8 +3,6 @@ open Matrix
 
 -- LU分解アルゴリズム（doolitleの方法）
 def LU_decomp (n : Nat) (A : Matrix n n) : (Matrix n n) × (Matrix n n) := Id.run do
-  -- let n := A.size -- A のサイズ
-  -- let mut L : Matrix := (Array.range n).map (fun i => (Array.range n).map (fun j => if i == j then 1 else 0)) -- 単位行列
   let A_data := A.data
   let mut L := (identityMatrix n).data -- 単位行列
   let mut U := (zeroMatrix n n).data -- ゼロ行列
@@ -41,12 +39,47 @@ def LU_decomp (n : Nat) (A : Matrix n n) : (Matrix n n) × (Matrix n n) := Id.ru
 
 macro "prove_lu" : tactic => `(tactic| native_decide)
 
+-- 一次方程式を解く関数
+def solv_with_LU (n : Nat) (A : Matrix n n) (b : Matrix n 1) : (Matrix n 1) := Id.run do
+  let result := LU_decomp n A
+  let L := result.1.data
+  let U := result.2.data
+  let b_data := b.data
+
+  -- L y = b を解く
+  let mut y := (zeroMatrix n 1).data -- ゼロ行列
+  -- y_{1}
+  y := y.set! 0 (y[0]!.set! 0 (b_data[0]![0]! / L[0]![0]!))
+  -- y_{k} (k > 1)
+  for i in [1:n] do
+    let mut sum : Rat := 0
+    for k in [0:i] do
+      sum := sum + L[i]![k]! * y[k]![0]!
+    let mut v := (b_data[i]![0]! - sum) / L[i]![i]!
+    y := y.set! i (y[i]!.set! 0 v)
+
+  -- U x = y を解く
+  let mut x := (zeroMatrix n 1).data -- ゼロ行列
+  let last := n - 1
+  -- x_{1}
+  x := x.set! last (x[last]!.set! 0 (y[last]![0]! / U[last]![last]!))
+  -- x_{k} (k > 1)
+  for j in Array.range n |>.reverse do
+    -- let mut j := n - i - 1
+    let mut sum : Rat := 0
+    for k in [j+1:n] do
+      sum := sum + U[j]![k]! * x[k]![0]!
+    let mut v := (y[j]![0]! - sum) / U[j]![j]!
+    x := x.set! j (x[j]!.set! 0 v)
+
+  return Matrix.of x
+
 section test
 
 def A : Matrix 3 3 := Matrix.of #[
-  #[2, -1, -2],
-  #[-4, 6, 3],
-  #[-4, -2, 8]
+  #[2, 3, 4],
+  #[4, 3, 29],
+  #[6, 9, 2],
 ]
 #eval A
 def result := LU_decomp 3 A
@@ -57,5 +90,15 @@ def U := result.2
 
 theorem lu_is_correct : A = L • U := by
   prove_lu
+
+def b : Matrix 3 1 := Matrix.of #[
+  #[6],
+  #[33],
+  #[5],
+]
+#eval b
+
+def x := solv_with_LU 3 A b
+#eval x
 
 end test
