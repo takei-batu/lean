@@ -1,0 +1,453 @@
+{
+  "inventory": [
+    "exact",
+    "elt",
+    "[anonymous]",
+    "sub",
+    "have",
+    "intro",
+    "imp",
+    "STG4.Subset.refl",
+    "STG4.Subset.trans",
+    "by_contra",
+    "not",
+    "rfl",
+    "comp",
+    "iff",
+    "STG4.mem_compl_iff",
+    "rewrite",
+    "rw",
+    "STG4.compl_subset_compl_of_subset",
+    "apply",
+    "push_neg",
+    "Set.Subset.antisymm",
+    "STG4.compl_compl",
+    "constructor",
+    "Iff.intro",
+    "and",
+    "Set.mem_inter_iff",
+    "inter",
+    "And.intro",
+    "STG4.inter_subset_swap",
+    "STG4.inter_comm",
+    "ext",
+    "STG4.inter_assoc",
+    "Or.inl",
+    "Or.inr",
+    "or",
+    "Set.mem_union",
+    "union",
+    "rcases",
+    "STG4.union_subset_swap",
+    "STG4.union_comm",
+    "left",
+    "right",
+    "STG4.union_assoc",
+    "Set.mem_sInter",
+    "all",
+    "famint",
+    "STG4.mem_pair",
+    "SetDef"
+  ],
+  "readIntro": false,
+  "data": {
+    "Subset": {
+      "1": {
+        "code": "exact h",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 8,
+            "positionLineNumber": 1,
+            "positionColumn": 8
+          }
+        ],
+        "help": []
+      },
+      "2": {
+        "code": "exact h1 h2",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 7,
+            "positionLineNumber": 1,
+            "positionColumn": 7
+          }
+        ],
+        "help": []
+      },
+      "3": {
+        "code": "have h4 : x ∈ B := h1 h3\r\nexact h2 h4\r\n-- exact h2 (h1 h3)",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 2,
+            "selectionStartColumn": 12,
+            "positionLineNumber": 2,
+            "positionColumn": 12
+          }
+        ],
+        "help": []
+      },
+      "4": {
+        "code": "intro h\r\nexact h2 (h1 h)",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 2,
+            "selectionStartColumn": 15,
+            "positionLineNumber": 2,
+            "positionColumn": 15
+          }
+        ],
+        "help": [
+          1
+        ]
+      },
+      "5": {
+        "code": "intro x\r\nintro h\r\nexact h",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 3,
+            "selectionStartColumn": 8,
+            "positionLineNumber": 3,
+            "positionColumn": 8
+          }
+        ],
+        "help": []
+      },
+      "6": {
+        "code": "intro x\r\nintro h\r\nexact h2 (h1 h)",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 3,
+            "selectionStartColumn": 16,
+            "positionLineNumber": 3,
+            "positionColumn": 16
+          }
+        ],
+        "help": [
+          2
+        ]
+      },
+      "readIntro": false
+    },
+    "Complement": {
+      "1": {
+        "code": "by_contra h\r\n-- intro h\r\nhave h3 := h h1\r\nexact h2 h3",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 4,
+            "selectionStartColumn": 12,
+            "positionLineNumber": 4,
+            "positionColumn": 12
+          }
+        ],
+        "help": []
+      },
+      "2": {
+        "code": "rfl",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 4,
+            "positionLineNumber": 1,
+            "positionColumn": 4
+          }
+        ],
+        "help": []
+      },
+      "3": {
+        "code": "intro x \r\nrw[mem_compl_iff, mem_compl_iff]\r\nintro h2\r\nby_contra h\r\nexact h2 (h1 h)",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 5,
+            "selectionStartColumn": 16,
+            "positionLineNumber": 5,
+            "positionColumn": 16
+          }
+        ],
+        "help": []
+      },
+      "4": {
+        "code": "apply Subset.antisymm\r\n· intro h\r\n  rw[mem_compl_iff]\r\n  intro g\r\n  rw[mem_compl_iff] at g\r\n  push_neg at g\r\n  exact g\r\n· intro h\r\n  rw[mem_compl_iff]\r\n  rw[mem_compl_iff]\r\n  push_neg\r\n  intro g\r\n  exact g",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 13,
+            "selectionStartColumn": 10,
+            "positionLineNumber": 13,
+            "positionColumn": 10
+          }
+        ],
+        "help": []
+      },
+      "5": {
+        "code": "apply Iff.intro\r\n· exact compl_subset_compl_of_subset\r\n· intro h\r\n  rw[← compl_compl A]\r\n  rw[← compl_compl B]\r\n  exact compl_subset_compl_of_subset h",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 6,
+            "selectionStartColumn": 39,
+            "positionLineNumber": 6,
+            "positionColumn": 39
+          }
+        ],
+        "help": []
+      },
+      "readIntro": false
+    },
+    "Intersection": {
+      "1": {
+        "code": "exact h.left",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 13,
+            "positionLineNumber": 1,
+            "positionColumn": 13
+          }
+        ],
+        "help": []
+      },
+      "2": {
+        "code": "rw[mem_inter_iff] at h\r\nexact h.right",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 2,
+            "selectionStartColumn": 14,
+            "positionLineNumber": 2,
+            "positionColumn": 14
+          }
+        ],
+        "help": []
+      },
+      "3": {
+        "code": "intro x\r\nintro h\r\n-- rw[mem_inter_iff] at h\r\nexact h.left",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 2,
+            "selectionStartColumn": 8,
+            "positionLineNumber": 2,
+            "positionColumn": 8
+          }
+        ],
+        "help": []
+      },
+      "4": {
+        "code": "exact And.intro h1 h2",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 22,
+            "positionLineNumber": 1,
+            "positionColumn": 22
+          }
+        ],
+        "help": []
+      },
+      "5": {
+        "code": "intro x\r\nrw[mem_inter_iff]\r\nintro h\r\nexact And.intro (h1 h) (h2 h)",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 4,
+            "selectionStartColumn": 30,
+            "positionLineNumber": 4,
+            "positionColumn": 30
+          }
+        ],
+        "help": []
+      },
+      "6": {
+        "code": "intro x h\r\nexact And.intro h.right h.left",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 10,
+            "positionLineNumber": 1,
+            "positionColumn": 10
+          }
+        ],
+        "help": []
+      },
+      "7": {
+        "code": "apply Subset.antisymm\r\n· exact inter_subset_swap A B\r\n· exact inter_subset_swap B A",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 3,
+            "selectionStartColumn": 30,
+            "positionLineNumber": 3,
+            "positionColumn": 30
+          }
+        ],
+        "help": []
+      },
+      "8": {
+        "code": "ext x\r\nconstructor\r\n· intro h\r\n  exact ⟨ h.left.left, ⟨ h.left.right, h.right ⟩ ⟩\r\n· intro h\r\n  exact ⟨ ⟨ h.left, h.right.left ⟩ , h.right.right ⟩",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 6,
+            "selectionStartColumn": 33,
+            "positionLineNumber": 6,
+            "positionColumn": 33
+          }
+        ],
+        "help": []
+      },
+      "readIntro": false
+    },
+    "Union": {
+      "1": {
+        "code": "exact Or.inl h",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 15,
+            "positionLineNumber": 1,
+            "positionColumn": 15
+          }
+        ],
+        "help": []
+      },
+      "2": {
+        "code": "intro x h\r\nexact Or.inr h",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 2,
+            "selectionStartColumn": 15,
+            "positionLineNumber": 2,
+            "positionColumn": 15
+          }
+        ],
+        "help": []
+      },
+      "3": {
+        "code": "intro x h3\r\nrcases h3 with g1 | g2\r\n· exact h1 g1\r\n· exact h2 g2",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 4,
+            "selectionStartColumn": 11,
+            "positionLineNumber": 4,
+            "positionColumn": 11
+          }
+        ],
+        "help": []
+      },
+      "4": {
+        "code": "intro x h\r\nrcases h with h1 | h2\r\n· exact Or.inr h1\r\n· exact Or.inl h2",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 4,
+            "selectionStartColumn": 15,
+            "positionLineNumber": 4,
+            "positionColumn": 15
+          }
+        ],
+        "help": []
+      },
+      "5": {
+        "code": "apply Subset.antisymm\r\n· exact union_subset_swap A B\r\n· exact union_subset_swap B A",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 3,
+            "selectionStartColumn": 30,
+            "positionLineNumber": 3,
+            "positionColumn": 30
+          }
+        ],
+        "help": []
+      },
+      "6": {
+        "code": "ext x\r\nconstructor\r\n· intro h\r\n  rcases h with h1 | h2\r\n  · rcases h1 with g1 | g2\r\n    · left; exact g1\r\n    · right; exact Or.inl g2\r\n  · right; exact Or.inr h2\r\n· intro h\r\n  rcases h with h1 | h2\r\n  · left; exact Or.inl h1\r\n  · rcases h2 with g1 | g2\r\n    · left; exact Or.inr g1\r\n    · right; exact g2",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 14,
+            "selectionStartColumn": 22,
+            "positionLineNumber": 14,
+            "positionColumn": 22
+          }
+        ],
+        "help": []
+      },
+      "readIntro": false
+    },
+    "FamInter": {
+      "1": {
+        "code": "intro x h\r\nrw[mem_sInter] at h\r\nhave hA := h A\r\nexact hA h1\r\n-- exact (h A) h1",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 4,
+            "selectionStartColumn": 12,
+            "positionLineNumber": 4,
+            "positionColumn": 12
+          }
+        ],
+        "help": []
+      },
+      "2": {
+        "code": "intro X h\r\nrw[mem_sInter]\r\nintro t ht\r\nhave g1 := h t\r\nhave g2 := h1 ht\r\nexact g1 g2",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 6,
+            "selectionStartColumn": 1,
+            "positionLineNumber": 6,
+            "positionColumn": 1
+          }
+        ],
+        "help": []
+      },
+      "3": {
+        "code": "apply Subset.antisymm\r\n· intro x h\r\n  rw[mem_sInter]\r\n  intro t ht\r\n  rw[mem_pair] at ht\r\n  rcases ht with h1 | h2\r\n  · rw[h1]\r\n    exact h.left\r\n  · rw[h2]\r\n    exact h.right\r\n· intro x h\r\n  rw[mem_sInter] at h\r\n  have hA := h A\r\n  have hB := h B\r\n  rw[mem_pair] at hA hB\r\n  have eqA : A = A := rfl\r\n  have eqB : B = B := rfl\r\n  apply And.intro\r\n  · exact hA (Or.inl eqA)\r\n  · exact hB (Or.inr eqB)",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 20,
+            "selectionStartColumn": 13,
+            "positionLineNumber": 20,
+            "positionColumn": 13
+          }
+        ],
+        "help": []
+      },
+      "4": {
+        "code": "apply Subset.antisymm\r\n· intro x h\r\n  rw[mem_sInter] at h\r\n  apply And.intro\r\n  · intro t ht\r\n    have g1 := h t\r\n    have g2 : t ∈ F ∪ G := Or.inl ht\r\n    exact g1 g2\r\n  · intro t ht\r\n    have g1 := h t\r\n    have g2 : t ∈ F ∪ G := Or.inr ht\r\n    exact g1 g2\r\n· intro x h\r\n  rw[mem_sInter]\r\n  intro t ht\r\n  rcases ht with gF | gG\r\n  · have hF := h.left\r\n    exact hF t gF\r\n  · have hG := h.right\r\n    exact (hG t) gG",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 20,
+            "selectionStartColumn": 20,
+            "positionLineNumber": 20,
+            "positionColumn": 20
+          }
+        ],
+        "help": []
+      },
+      "readIntro": false
+    }
+  },
+  "difficulty": 2,
+  "typewriterMode": false
+}
