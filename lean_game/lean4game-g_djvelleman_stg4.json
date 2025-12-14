@@ -47,7 +47,20 @@
     "all",
     "famint",
     "STG4.mem_pair",
-    "SetDef"
+    "SetDef",
+    "by_cases",
+    "Exists.intro",
+    "ex",
+    "use",
+    "Set.mem_sUnion",
+    "famunion",
+    "obtain",
+    "Set.mem_setOf",
+    "STG4.compl_union",
+    "STG4.compl_inter",
+    "STG4.inter_distrib_left",
+    "STG4.union_distrib_left",
+    "Set.mem_singleton_iff"
   ],
   "readIntro": false,
   "data": {
@@ -441,6 +454,303 @@
             "selectionStartColumn": 20,
             "positionLineNumber": 20,
             "positionColumn": 20
+          }
+        ],
+        "help": []
+      },
+      "5": {
+        "code": "constructor\r\n· intro h s hs x hx\r\n  have := h hx\r\n  exact this s hs\r\n· intro h x hx s hs\r\n  have := h s hs\r\n  exact this hx",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 7,
+            "selectionStartColumn": 16,
+            "positionLineNumber": 7,
+            "positionColumn": 16
+          }
+        ],
+        "help": []
+      },
+      "6": {
+        "code": "intro x hx\r\nby_cases h : x ∈ A\r\n· exact Or.inl h\r\n· apply Or.inr\r\n  intro t ht\r\n  have g1 := h1 t\r\n  have g2 := g1 ht\r\n  have g3 := hx (A ∪ t)\r\n  have g4 := g3 g2\r\n  rcases g4 with g5 | g6\r\n  · by_contra g\r\n    exact h g5\r\n  · exact g6",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 12,
+            "selectionStartColumn": 15,
+            "positionLineNumber": 12,
+            "positionColumn": 15
+          }
+        ],
+        "help": [
+          5
+        ]
+      },
+      "readIntro": false
+    },
+    "FamUnion": {
+      "1": {
+        "code": "have h := Subset.refl A\r\nexact Exists.intro A h",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 2,
+            "selectionStartColumn": 23,
+            "positionLineNumber": 2,
+            "positionColumn": 23
+          }
+        ],
+        "help": []
+      },
+      "2": {
+        "code": "intro x hx\r\nhave h := And.intro h1 hx\r\nexact Exists.intro A h",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 3,
+            "selectionStartColumn": 23,
+            "positionLineNumber": 3,
+            "positionColumn": 23
+          }
+        ],
+        "help": []
+      },
+      "3": {
+        "code": "intro x hx\r\nobtain ⟨ w, hw ⟩ := hx\r\nhave g1 := h1 hw.left\r\nhave gw := And.intro g1 hw.right\r\nexact ⟨ w , gw ⟩ ",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 5,
+            "selectionStartColumn": 18,
+            "positionLineNumber": 5,
+            "positionColumn": 18
+          }
+        ],
+        "help": []
+      },
+      "4": {
+        "code": "apply Subset.antisymm\r\n· intro x hx\r\n  rcases hx with h1 | h2\r\n  · have hA : A ∈ {A , B} := by rw[mem_pair]; left; rfl\r\n    exact ⟨ A , ⟨ hA, h1⟩ ⟩ \r\n  · have hB : B ∈ {A , B} := by rw[mem_pair]; right; rfl\r\n    exact ⟨ B , ⟨ hB, h2⟩ ⟩ \r\n· intro x hx\r\n  obtain ⟨ w, hw ⟩ := hx\r\n  have hwl := hw.left\r\n  have hwr := hw.right\r\n  rcases hwl with gl | gr\r\n  · rw[gl] at hwr\r\n    exact Or.inl hwr\r\n  · rw[gr] at hwr\r\n    exact Or.inr hwr\r\n",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 16,
+            "selectionStartColumn": 21,
+            "positionLineNumber": 16,
+            "positionColumn": 21
+          }
+        ],
+        "help": []
+      },
+      "5": {
+        "code": "apply Subset.antisymm\r\n· intro x hx\r\n  obtain ⟨ w , hw ⟩ := hx\r\n  have hwl := hw.left\r\n  have hwr := hw.right\r\n  rcases hwl\r\n  · left; exact ⟨ w, ⟨ h , hwr ⟩ ⟩ \r\n  · right; exact ⟨ w, ⟨ h , hwr ⟩ ⟩ \r\n· intro x hx\r\n  rcases hx\r\n  · obtain ⟨ w , hw ⟩ := h\r\n    have hwl := hw.left\r\n    have hwr := hw.right\r\n    have gw : w ∈ F ∪ G := Or.inl hwl\r\n    exact ⟨ w , ⟨ gw , hwr ⟩ ⟩ \r\n  · obtain ⟨ w , hw ⟩ := h\r\n    have hwl := hw.left\r\n    have hwr := hw.right\r\n    have gw : w ∈ F ∪ G := Or.inr hwl\r\n    exact ⟨ w , ⟨ gw , hwr ⟩ ⟩ ",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 19,
+            "selectionStartColumn": 38,
+            "positionLineNumber": 19,
+            "positionColumn": 38
+          }
+        ],
+        "help": []
+      },
+      "6": {
+        "code": "constructor\r\n· intro h s hs x hx\r\n  have g : x ∈ ⋃₀ F := ⟨ s , ⟨ hs , hx ⟩ ⟩ \r\n  exact h g\r\n· intro h x hx\r\n  obtain ⟨ w , hw ⟩ := hx\r\n  have hwl := hw.left\r\n  have hwr := hw.right\r\n  have g := h w hwl\r\n  exact g hwr",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 9,
+            "selectionStartColumn": 20,
+            "positionLineNumber": 9,
+            "positionColumn": 20
+          }
+        ],
+        "help": []
+      },
+      "7": {
+        "code": "apply Subset.antisymm\r\n· intro x h\r\n  have hl := h.left\r\n  have hr := h.right\r\n  obtain ⟨ w , hw ⟩ := hr\r\n  have hwl := hw.left\r\n  have hwr := hw.right\r\n  have l1 : A ∩ w = A ∩ w := rfl\r\n  have l2 : A ∩ w ∈ {s | ∃ u ∈ F, s = A ∩ u} := by rw[mem_setOf]; exact ⟨ w , hwl , l1 ⟩ \r\n  have l3 : x ∈ A ∩ w := ⟨ hl , hwr ⟩ \r\n  exact ⟨ A ∩ w , l2 , l3 ⟩ \r\n· intro x hx\r\n  obtain ⟨ w , hw ⟩ := hx\r\n  have hwl := hw.left\r\n  have hwr := hw.right\r\n  rw[mem_setOf] at hwl\r\n  obtain ⟨ t , ht ⟩ := hwl\r\n  have htl := ht.left\r\n  have htr := ht.right\r\n  apply And.intro\r\n  · rw[htr] at hwr\r\n    exact hwr.left\r\n  · rw[htr] at hwr\r\n    exact ⟨ t , htl, hwr.right ⟩ ",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 5,
+            "selectionStartColumn": 26,
+            "positionLineNumber": 5,
+            "positionColumn": 26
+          }
+        ],
+        "help": []
+      },
+      "readIntro": false
+    },
+    "Combination": {
+      "1": {
+        "code": "apply Subset.antisymm\r\n· intro x hx\r\n  rw[mem_compl_iff] at hx\r\n  apply And.intro\r\n  · by_contra h\r\n    rw[mem_compl_iff] at h\r\n    push_neg at h\r\n    have gx : x ∈ A ∪ B := Or.inl h\r\n    exact hx gx\r\n  · by_contra h\r\n    rw[mem_compl_iff] at h\r\n    push_neg at h\r\n    have gx : x ∈ A ∪ B := Or.inr h\r\n    exact hx gx\r\n· intro x hx\r\n  rw[mem_compl_iff]\r\n  have hxl := hx.left\r\n  have hxr := hx.right\r\n  rw[mem_compl_iff] at hxl hxr\r\n  by_contra h\r\n  rcases h\r\n  · exact hxl h\r\n  · exact hxr h",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 19,
+            "selectionStartColumn": 31,
+            "positionLineNumber": 19,
+            "positionColumn": 31
+          }
+        ],
+        "help": []
+      },
+      "2": {
+        "code": "have l : (Aᶜ  ∪ Bᶜ )ᶜ = Aᶜᶜ ∩ Bᶜᶜ := compl_union Aᶜ Bᶜ\r\nrw[compl_compl] at l l\r\nrw[← l]\r\nrw[compl_compl]",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 4,
+            "selectionStartColumn": 16,
+            "positionLineNumber": 4,
+            "positionColumn": 16
+          }
+        ],
+        "help": []
+      },
+      "3": {
+        "code": "apply Subset.antisymm\r\n· intro x hx\r\n  have hxl := hx.left\r\n  have hxr := hx.right\r\n  rcases hxr\r\n  · left; exact ⟨ hxl , h ⟩ \r\n  · right; exact ⟨ hxl , h ⟩ \r\n· intro x hx\r\n  rcases hx\r\n  · apply And.intro\r\n    · exact h.left\r\n    · left; exact h.right\r\n  · apply And.intro\r\n    · exact h.left\r\n    · right; exact h.right",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 22,
+            "positionLineNumber": 1,
+            "positionColumn": 22
+          }
+        ],
+        "help": []
+      },
+      "4": {
+        "code": "rw[← compl_compl (A ∪ B ∩ C)]\r\nrw[compl_union]\r\nrw[compl_inter B C]\r\nrw[inter_distrib_left]\r\nrw[compl_union]\r\nrw[← compl_union A B]\r\nrw[← compl_union A C]\r\nrw[compl_compl]\r\nrw[compl_compl]",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 9,
+            "selectionStartColumn": 16,
+            "positionLineNumber": 9,
+            "positionColumn": 16
+          }
+        ],
+        "help": []
+      },
+      "5": {
+        "code": "intro x hx\r\nhave h3 : x ∈ A ∪ C := by\r\n  left\r\n  exact hx\r\nhave g1 := h1 h3\r\nrcases g1\r\n· exact h\r\n· have g2 : x ∈ A ∩ C := ⟨ hx , h ⟩ \r\n  have g3 : x ∈ B ∩ C := h2 g2\r\n  exact g3.left",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 9,
+            "selectionStartColumn": 31,
+            "positionLineNumber": 9,
+            "positionColumn": 31
+          }
+        ],
+        "help": []
+      },
+      "readIntro": false
+    },
+    "FamCombo": {
+      "1": {
+        "code": "apply Subset.antisymm\r\n· intro x hx s hs\r\n  rw[mem_setOf] at hs\r\n  by_contra h\r\n  rw[← mem_compl_iff] at h\r\n  have gx : x ∈ ⋃₀ F := ⟨ sᶜ , hs , h ⟩ \r\n  exact hx gx\r\n· intro x hx\r\n  rw[mem_compl_iff]\r\n  by_contra h\r\n  obtain ⟨ w , hw ⟩ := h\r\n  have hwl := hw.left\r\n  have hwr := hw.right\r\n  rw[← compl_compl w] at hwl\r\n  have g1 := hx wᶜ \r\n  have g2 := g1 hwl\r\n  exact g2 hwr",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 8,
+            "selectionStartColumn": 3,
+            "positionLineNumber": 8,
+            "positionColumn": 3
+          }
+        ],
+        "help": []
+      },
+      "2": {
+        "code": "apply Subset.antisymm\r\n· rw[← compl_compl (⋃₀ {s | sᶜ ∈ F})]\r\n  apply compl_subset_compl_of_subset\r\n  intro x hx s hs\r\n  by_contra h\r\n  rw[← mem_compl_iff] at h\r\n  rw[← compl_compl s] at hs\r\n  have g : x ∈ ⋃₀ {s | sᶜ ∈ F} := ⟨ sᶜ , hs , h ⟩ \r\n  exact hx g\r\n· intro x hx\r\n  by_contra h\r\n  rw[← mem_compl_iff, compl_compl] at h\r\n  obtain ⟨ w , hw ⟩ := hx\r\n  have hwl := hw.left\r\n  have hwr := hw.right\r\n  rw[mem_setOf] at hwl\r\n  have g := h wᶜ hwl\r\n  exact g hwr",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 2,
+            "selectionStartColumn": 38,
+            "positionLineNumber": 2,
+            "positionColumn": 38
+          }
+        ],
+        "help": []
+      },
+      "3": {
+        "code": "obtain ⟨ w , hw ⟩ := h2\r\nhave h1w := h1 w\r\nhave hwl := hw.left\r\nhave g1 := h1w hwl\r\nobtain ⟨ z , hz ⟩ := g1\r\nhave hzl := hz.left\r\nhave hwr := hw.right\r\nhave g2 := hwr z hzl\r\nhave hzr := hz.right\r\nhave g3 : z = w := Subset.antisymm g2 hzr\r\nrw[g3] at hzl\r\nexact ⟨ w , hwl , hzl ⟩ ",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 12,
+            "selectionStartColumn": 1,
+            "positionLineNumber": 12,
+            "positionColumn": 1
+          }
+        ],
+        "help": []
+      },
+      "4": {
+        "code": "intro x hx\r\nhave hxl := hx.left\r\nobtain ⟨ w , hw ⟩ := hxl\r\nhave hwl := hw.left\r\nhave g1 := h1 w\r\nhave g2 := g1 hwl\r\nobtain ⟨ z , hz ⟩ := g2\r\nhave hzl := hz.left\r\nhave hxr := hx.right\r\nhave g3 := hxr z\r\nhave g4 := g3 hzl\r\nhave hwr := hw.right\r\nhave hzr := hz.right\r\nexact ⟨ w ∩ z , hzr , hwr , g4 ⟩ ",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 14,
+            "selectionStartColumn": 34,
+            "positionLineNumber": 14,
+            "positionColumn": 34
+          }
+        ],
+        "help": []
+      },
+      "5": {
+        "code": "intro x hx\r\nhave hxl := hx.left\r\nhave hxr := hx.right\r\nobtain ⟨ w , hw ⟩ := hxl\r\nhave hwr := hw.right\r\nhave hwl := hw.left\r\nby_cases h : w ∈ Gᶜ\r\n· have l : w ∈ F ∩ Gᶜ := ⟨ hwl , h ⟩ \r\n  exact ⟨ w , l , hwr ⟩ \r\n· rw[← mem_compl_iff, compl_compl] at h\r\n  have l : x ∈ ⋃₀ G := ⟨ w , h , hwr ⟩ \r\n  by_contra g\r\n  exact hxr l",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 13,
+            "selectionStartColumn": 14,
+            "positionLineNumber": 13,
+            "positionColumn": 14
+          }
+        ],
+        "help": []
+      },
+      "6": {
+        "code": "intro x ⟨ hxl , hxr ⟩ \r\nobtain ⟨ w , ⟨ hwl , hwr ⟩  ⟩ := hxl\r\nby_cases h : w ∈ G\r\n· exact ⟨ w , ⟨ hwl , h ⟩ , hwr ⟩ \r\n· rw[← mem_compl_iff] at h\r\n  have l1 : x ∈ ⋃₀ (F ∩ Gᶜ) := ⟨ w , ⟨ hwl , h ⟩ , hwr ⟩ \r\n  have l2 := h1 l1\r\n  have l3 := l2.right\r\n  have hxr := hxr\r\n  by_contra g\r\n  exact l3 hxr",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 1,
+            "selectionStartColumn": 23,
+            "positionLineNumber": 1,
+            "positionColumn": 23
+          }
+        ],
+        "help": []
+      },
+      "7": {
+        "code": "intro x ⟨ hxl , hxr ⟩\r\nrw[mem_sUnion]\r\nobtain ⟨ w , ⟨ hwl , hwr ⟩ ⟩ := hxl\r\nrw[mem_compl_iff, mem_sInter] at hxr\r\npush_neg at hxr\r\nobtain ⟨ z , ⟨ hzl , hzr ⟩ ⟩ := hxr\r\nrw[← mem_compl_iff] at hzr\r\nhave l1 : ∃ v ∈ G, w ∩ zᶜ = w ∩ vᶜ := by use z\r\nhave l2 : ∃ u ∈ F, ∃ v ∈ G, w ∩ zᶜ = u ∩ vᶜ := by use w\r\nhave l3 : x ∈ w ∩ zᶜ := ⟨ hwr , hzr ⟩\r\nuse w ∩ zᶜ\r\nexact ⟨ l2 , l3 ⟩",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 6,
+            "selectionStartColumn": 36,
+            "positionLineNumber": 6,
+            "positionColumn": 36
+          }
+        ],
+        "help": []
+      },
+      "8": {
+        "code": "have h2 := h1 {{s} | s ∈ A}\r\nhave h3 : ⋃₀ {{s} | s ∈ A} = A := by\r\n  apply Subset.antisymm\r\n  · intro x hx\r\n    obtain ⟨ w , ⟨ hwl , hwr ⟩ ⟩ := hx\r\n    rw[mem_setOf] at hwl\r\n    obtain ⟨ a , ⟨ hal , har ⟩ ⟩ := hwl\r\n    rw[← har] at hwr\r\n    rw[mem_singleton_iff] at hwr\r\n    rw[← hwr] at hal\r\n    exact hal\r\n  · intro x hx\r\n    use {x}\r\n    apply And.intro\r\n    · rw[mem_setOf]\r\n      use x\r\n    · rw[mem_singleton_iff]\r\nhave h := h2 h3\r\nrw[mem_setOf] at h\r\nobtain ⟨ w , hwr , hwl ⟩ := h\r\nuse w\r\nrw[hwl]",
+        "completed": true,
+        "selections": [
+          {
+            "selectionStartLineNumber": 4,
+            "selectionStartColumn": 15,
+            "positionLineNumber": 4,
+            "positionColumn": 15
           }
         ],
         "help": []
