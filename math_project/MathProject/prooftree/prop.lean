@@ -1,4 +1,5 @@
 import Mathlib.Data.List.Basic
+import Mathlib.Control.Basic
 set_option linter.style.longLine false
 -- set_option linter.unusedVariables false
 
@@ -15,7 +16,7 @@ deriving Repr, DecidableEq
 def Formula.not (A : Formula) : Formula := Formula.imp A Formula.bot
 
 notation "⊥"   => Formula.bot
-infixr:55 " → " => Formula.imp
+infixr:55 " ⇒ " => Formula.imp
 infixl:60 " ∧ " => Formula.and
 infixl:55 " ∨ " => Formula.or
 prefix:75 "¬" => Formula.not
@@ -28,6 +29,22 @@ def Formula.toStr : Formula → String
   | and A B => "(" ++ A.toStr ++ " ∧ " ++ B.toStr ++ ")"
   | or A B  => "(" ++ A.toStr ++ " ∨ " ++ B.toStr ++ ")"
 
+-- Provable (Bottom up)
+inductive Provable : List Formula → Formula → Prop where
+  | Axiom (h : A ∈ Γ) : Provable Γ A
+  | ImpIntro (h : Provable (A :: Γ) B) : Provable Γ (Formula.imp A B)
+  | ImpElim (h₁ : Provable Γ A) (h₂ : Provable Γ (Formula.imp A B)) : Provable Γ B
+  | AndIntro (h₁ : Provable Γ A) (h₂ : Provable Γ B) : Provable Γ (Formula.and A B)
+  | AndElimL (h : Provable Γ (Formula.and A B)): Provable Γ A
+  | AndElimR (h : Provable Γ (Formula.and A B)): Provable Γ B
+  | OrIntroL (h : Provable Γ A) : Provable Γ (Formula.or A B)
+  | OrIntroR (h : Provable Γ B) : Provable Γ (Formula.or A B)
+  | OrElim (h₁ : Provable Γ (Formula.or A B)) (h₂ : Provable (A :: Γ) C) (h₃ : Provable (B :: Γ) C) : Provable Γ (Formula.and A B)
+  | Exp (h : Provable Γ Formula.bot) : Provable Γ A
+  | LEM : Provable Γ (Formula.or A (Formula.not A))
+infix:50 " ⊢ " => Provable
+
+-- Deriving (Top Down)
 inductive Rule where
   | Intro
   | Elim
@@ -47,8 +64,8 @@ deriving Repr, DecidableEq
 
 -- NodeInfo
 structure NodeInfo where
-  rule : Rule
-  label : Label
+  rule : Rule := Rule.Intro
+  label : Label := Label.Assume
   side : Side := Side.None
 deriving Repr, DecidableEq
 
@@ -68,20 +85,15 @@ structure ProofState where
 deriving Repr
 
 -- assumption rule
-def Assume (P : ProofState) (A : Formula) : Option ProofState :=
-  if P.hypothesis.contains A then
-    let info : NodeInfo := {
-      rule := Rule.Intro -- 仮定の導入という意味合い
-      label := Label.Assume }
-    let tree := ProofTree.assumption info A
-    some { P with
-           consequence := A
-           tree := tree }
-  else
-    none
+def Assume (A : Formula) : Option ProofState :=
+  let tree := ProofTree.assumption {} A
+  some {
+    hypothesis := [A]
+    consequence := A
+    tree := tree }
 
 -- inference rule
-def ImpIntro (P : ProofState) (A : Formula) : Option ProofState :=
+def ImpIntro (A : Formula) (P : ProofState) : Option ProofState :=
   let newH := P.hypothesis.filter (fun x => x != A)
   let newF := Formula.imp A P.consequence
   let info : NodeInfo := {
@@ -92,6 +104,7 @@ def ImpIntro (P : ProofState) (A : Formula) : Option ProofState :=
     hypothesis := newH
     consequence := newF
     tree := newT }
+def Imp_I (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => ImpIntro A P)
 
 def ImpElim (minor major : ProofState) : Option ProofState :=
   match major.consequence with
@@ -108,6 +121,7 @@ def ImpElim (minor major : ProofState) : Option ProofState :=
         tree := newT }
     else none
   | _ => none
+def Imp_E (minor major : Option ProofState) : Option ProofState := major.bind (fun M => minor.bind (fun m => ImpElim m M))
 
 def AndIntro (P₁ P₂ : ProofState) : Option ProofState :=
   let newH := P₁.hypothesis ∪ P₂.hypothesis
@@ -120,8 +134,9 @@ def AndIntro (P₁ P₂ : ProofState) : Option ProofState :=
     hypothesis := newH
     consequence := newF
     tree := newT }
+def And_I (P₁ P₂ : Option ProofState) : Option ProofState := P₁.bind (fun P₁ => P₂.bind (fun P₂ => AndIntro P₁ P₂))
 
-def AndElim (P : ProofState) (d : Side) : Option ProofState :=
+def AndElim (d : Side) (P : ProofState) : Option ProofState :=
   match P.consequence with
   | Formula.and A B =>
     let info : NodeInfo := {
@@ -133,8 +148,9 @@ def AndElim (P : ProofState) (d : Side) : Option ProofState :=
       consequence := if d == Side.Left then A else B
       tree := newT }
   | _ => none
+def And_E (d : Side) (P : Option ProofState) : Option ProofState := P.bind (fun P => AndElim d P)
 
-def OrIntro (P : ProofState) (A : Formula) (d : Side) : Option ProofState :=
+def OrIntro (A : Formula) (d : Side) (P : ProofState) : Option ProofState :=
   let newF := if d == Side.Left then (Formula.or P.consequence A) else (Formula.or A P.consequence)
   let info : NodeInfo := {
       rule := Rule.Intro
@@ -144,6 +160,7 @@ def OrIntro (P : ProofState) (A : Formula) (d : Side) : Option ProofState :=
   some { P with
     consequence := newF
     tree := newT }
+def Or_I (A : Formula) (d : Side) (P : Option ProofState) : Option ProofState := P.bind (fun P => OrIntro A d P)
 
 def OrElim (major left right : ProofState) : Option ProofState :=
   match major.consequence with
@@ -161,8 +178,9 @@ def OrElim (major left right : ProofState) : Option ProofState :=
         tree := newT }
       else none
   | _ => none
+def Or_E (major left right : Option ProofState) : Option ProofState := major.bind (fun M => left.bind (fun L => right.bind (fun R => OrElim M L R)))
 
-def NotIntro (P : ProofState) (A : Formula) : Option ProofState :=
+def NotIntro (A : Formula) (P : ProofState) : Option ProofState :=
   if P.consequence == Formula.bot then
     let newH := P.hypothesis.filter (fun x => x != A)
     let newF := Formula.not A
@@ -175,6 +193,7 @@ def NotIntro (P : ProofState) (A : Formula) : Option ProofState :=
       consequence := newF
       tree := newT }
   else none
+def Not_I (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => NotIntro A P)
 
 def NotElim (minor major : ProofState) : Option ProofState :=
   match major.consequence with
@@ -191,8 +210,9 @@ def NotElim (minor major : ProofState) : Option ProofState :=
         tree := newT }
     else none
   | _ => none
+def Not_E (minor major : Option ProofState) : Option ProofState := major.bind (fun M => minor.bind (fun m => NotElim m M))
 
-def Exp (P : ProofState) (A : Formula) : Option ProofState :=
+def Law_of_EXP (A : Formula) (P : ProofState) : Option ProofState :=
   if P.consequence == Formula.bot then
     let info : NodeInfo := {
       rule := Rule.Elim -- ⊥ を取り除くという意味合い
@@ -202,8 +222,9 @@ def Exp (P : ProofState) (A : Formula) : Option ProofState :=
       consequence := A
       tree := newT }
   else none
+def EXP (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => Law_of_EXP A P)
 
-def LEM (P : ProofState) (A : Formula) : Option ProofState :=
+def Law_of_LEM (A : Formula) (P : ProofState) : Option ProofState :=
   let newF := Formula.or A (Formula.not A)
   let info : NodeInfo := {
     rule := Rule.Intro -- 仮定無しで結論づけるという意味合い
@@ -212,8 +233,9 @@ def LEM (P : ProofState) (A : Formula) : Option ProofState :=
   some { P with
     consequence := newF
     tree := newT }
+def LEM (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => Law_of_LEM A P)
 
-def DNE (P : ProofState) (A : Formula) : Option ProofState :=
+def Law_of_DNE (A : Formula) (P : ProofState) : Option ProofState :=
   if P.consequence == Formula.not (Formula.not A) then
     let info : NodeInfo := {
       rule := Rule.Elim -- 仮定無しで結論づけるという意味合い
@@ -223,8 +245,9 @@ def DNE (P : ProofState) (A : Formula) : Option ProofState :=
       consequence := A
       tree := newT }
   else none
+def DNE (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => Law_of_DNE A P)
 
-def RAA (P : ProofState) (A : Formula) : Option ProofState :=
+def Law_of_RAA (A : Formula) (P : ProofState) : Option ProofState :=
   if P.consequence == Formula.bot then
     let newH := P.hypothesis.filter (fun x => x != Formula.not A)
     let info : NodeInfo := {
@@ -236,19 +259,17 @@ def RAA (P : ProofState) (A : Formula) : Option ProofState :=
       consequence := A
       tree := newT }
   else none
+def RAA (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => Law_of_RAA A P)
 
--- inductive Provable (hypothesis : List Formula) (consequence : Formula) : Prop where
-inductive Provable : List Formula → Formula → Prop where
-  | Axom (h : A ∈ Γ) : Provable Γ A
-  | ImpIntro : Provable (Γ ∪ [A]) B → Provable Γ (Formula.imp A B)
-  | ImpElim : Provable Γ₁ A → Provable Γ₂ (Formula.imp A B) → Provable (Γ₁ ∪ Γ₂) B
-  | AndIntro : Provable Γ₁ A → Provable Γ₂ B → Provable (Γ₁ ∪ Γ₂) (Formula.and A B)
-  | AndElimL : Provable Γ (Formula.and A B) → Provable Γ A
-  | AndElimR : Provable Γ (Formula.and A B) → Provable Γ B
-  | OrIntroL : Provable Γ A → Provable Γ (Formula.or A B)
-  | OrIntroR : Provable Γ B → Provable Γ (Formula.or A B)
-  | OrElim : Provable Γ₁ (Formula.or A B) → Provable (Γ₂ ∪ [A]) C → Provable (Γ₃ ∪ [B]) C → Provable (Γ₁ ∪ Γ₂ ∪ Γ₃) (Formula.and A B)
-  | Exp : Provable Γ Formula.bot → Provable Γ A
-  | LEM : Provable Γ (Formula.or A (Formula.not A))
+-- soundness
+namespace ProofState
 
-infix:50 " ⊢ " => Provable
+-- ProofState → Prop
+def toProp (P : ProofState) : Prop :=
+  Provable P.hypothesis P.consequence
+
+end ProofState
+
+-- theorem ImpIntro_is_valid (A : Formula) (P : ProofState) :
+--   P.toProp → ∀ S : ProofState, ImpIntro P A = some S -> S.toProp := by
+--   sorry
