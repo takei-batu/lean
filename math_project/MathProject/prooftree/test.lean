@@ -1,4 +1,4 @@
--- import ProofWidgets.Component.Markdown
+-- import ProofWidgets
 import MathProject.prooftree.prop
 import MathProject.prooftree.tree_to_latex
 
@@ -43,34 +43,38 @@ def P2 : Proof := by
 #eval P1
 #eval P2
 
-#eval (¬A).toLatex
-#eval (¬¬A).toLatex
+-- #eval (¬A).toLatex
+-- #eval (¬¬A).toLatex
 
-#eval (A ⇒ B).toLatex
-#eval (A ⇒ ⊥).toLatex
-#eval (A ⇒ B ⇒ C).toLatex
-#eval (A ⇒ (B ⇒ C)).toLatex
-#eval ((A ⇒ B) ⇒ C).toLatex
+-- #eval (A ⇒ B).toLatex
+-- #eval (A ⇒ ⊥).toLatex
+-- #eval (A ⇒ B ⇒ C).toLatex
+-- #eval (A ⇒ (B ⇒ C)).toLatex
+-- #eval ((A ⇒ B) ⇒ C).toLatex
 
-#eval (A ∧ B).toLatex
-#eval (A ∧ B ∧ C).toLatex
-#eval (A ∧ (B ∧ C)).toLatex
-#eval ((A ∧ B) ∧ C).toLatex
+-- #eval (A ∧ B).toLatex
+-- #eval (A ∧ B ∧ C).toLatex
+-- #eval (A ∧ (B ∧ C)).toLatex
+-- #eval ((A ∧ B) ∧ C).toLatex
 
-#eval (A ∨ B).toLatex
-#eval (A ∨ B ∨ C).toLatex
-#eval (A ∨ (B ∨ C)).toLatex
-#eval ((A ∨ B) ∨ C).toLatex
+-- #eval (A ∨ B).toLatex
+-- #eval (A ∨ B ∨ C).toLatex
+-- #eval (A ∨ (B ∨ C)).toLatex
+-- #eval ((A ∨ B) ∨ C).toLatex
 
-#eval (A ↔ B).toLatex
-#eval (A ↔ B ↔ C).toLatex
-#eval (A ↔ (B ↔ C)).toLatex
-#eval ((A ↔ B) ↔ C).toLatex
+-- #eval (A ↔ B).toLatex
+-- #eval (A ↔ B ↔ C).toLatex
+-- #eval (A ↔ (B ↔ C)).toLatex
+-- #eval ((A ↔ B) ↔ C).toLatex
 
-#eval (A ∨ B ∧ C).toLatex
-#eval (A ∧ B ∨ C).toLatex
-#eval (¬A ∧ B ⇒ C).toLatex
-#eval (A ⇒ ¬B ∧ C).toLatex
+-- #eval (A ∨ B ∧ C).toLatex
+-- #eval (A ∧ B ∨ C).toLatex
+-- #eval (¬A ∧ B ⇒ C).toLatex
+-- #eval (A ⇒ ¬B ∧ C).toLatex
 
 #eval IO.println (P.run []).toOption.get!.tree.toLatex
 #eval IO.println P.toLatex.get!
+
+-- open ProofWidgets
+-- open ProofWidgets.Jsx
+-- open Lean

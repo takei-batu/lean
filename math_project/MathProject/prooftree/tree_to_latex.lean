@@ -70,7 +70,7 @@ def toLatex (T : Tree) : String :=
     s!"{T₂.toLatex}\n" ++
     s!"{T₃.toLatex}\n" ++
     "\\RightLabel{\\scriptsize " ++ s!"{rule.toLatex}" ++ "}\n" ++
-    "\\BinaryInfC{" ++ s!"{C.toLatex}" ++ "}"
+    "\\TrinaryInfC{" ++ s!"{C.toLatex}" ++ "}"
 
 end Tree
 
@@ -93,21 +93,3 @@ def toLatex (P : Proof) : Option String :=
   | _ => none
 
 end Proof
-
--- def Compile (P : Proof) (filename : String) : IO Unit := do
---   let texPath := filename ++ ".tex"
---   let source ← P.toLatex
-
---   IO.FS.writeFile source
---   IO.println s!"Generated tex file: {texPath}"
-
---   let child ← IO.Process.spawn {
---     cmd := "pdflatex"
---     args := #["-interaction=nonstopmode", texPath]
---   }
---   let exitCode ← child.wait
-
---   if exitCode == 0 then
---     IO.println s!"Success! PDF generated: {filename}.pdf"
---   else
---     IO.println s!"Error: pdflatex failed with code {exitCode}"
