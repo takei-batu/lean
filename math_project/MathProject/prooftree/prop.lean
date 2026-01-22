@@ -1,275 +1,364 @@
-import Mathlib.Data.List.Basic
-import Mathlib.Control.Basic
-set_option linter.style.longLine false
--- set_option linter.unusedVariables false
+import Lean
+-- set_option linter.style.longLine false
 
--- Formula（論理式）の定義
 inductive Formula where
-  | atom (name : String) : Formula -- 命題変数記号（Stringでタグ付け）
+  | atom (name : String) : Formula -- atomic formula
   | bot : Formula -- ⊥
-  | imp : Formula → Formula → Formula -- 含意 A → B
-  | and : Formula → Formula → Formula -- 連言 A ∧ B
-  | or : Formula → Formula → Formula -- 選言 A ∨ B
+  | not : Formula → Formula -- ¬A
+  | imp : Formula → Formula → Formula -- A ⇒ B
+  | and : Formula → Formula → Formula -- A ∧ B
+  | or : Formula → Formula → Formula -- A ∨ B
+  | iff : Formula → Formula → Formula -- A ↔ B
 deriving Repr, DecidableEq
 
--- ¬ A ↔ A → ⊥
-def Formula.not (A : Formula) : Formula := Formula.imp A Formula.bot
+-- namespace Formula
+-- end Formula
+
+-- abbrev not (A : Formula) : Formula := imp A bot
+-- abbrev iff (A B : Formula) : Formula := and (imp A B) (imp B A)
+
+instance : Inhabited Formula where
+  default := Formula.atom "False"
+
+namespace MyStyle
 
 notation "⊥"   => Formula.bot
-infixr:55 " ⇒ " => Formula.imp
-infixl:60 " ∧ " => Formula.and
-infixl:55 " ∨ " => Formula.or
-prefix:75 "¬" => Formula.not
+notation:20 left:20 " ↔ " right:21 => Formula.iff left right
+notation:25 left:26 " ⇒ " right:25 => Formula.imp left right
+notation:30 left:31 " ∨ " right:30 => Formula.or left right
+notation:35 left:36 " ∧ " right:35 => Formula.and left right
+notation:40 " ¬ " arg:40 => Formula.not arg
 
--- 表示を見やすくする設定 (ToString)
-def Formula.toStr : Formula → String
-  | atom s => s
-  | bot => "⊥"
-  | imp A B => "(" ++ A.toStr ++ " → " ++ B.toStr ++ ")"
-  | and A B => "(" ++ A.toStr ++ " ∧ " ++ B.toStr ++ ")"
-  | or A B  => "(" ++ A.toStr ++ " ∨ " ++ B.toStr ++ ")"
+end MyStyle
 
--- Provable (Bottom up)
-inductive Provable : List Formula → Formula → Prop where
-  | Axiom (h : A ∈ Γ) : Provable Γ A
-  | ImpIntro (h : Provable (A :: Γ) B) : Provable Γ (Formula.imp A B)
-  | ImpElim (h₁ : Provable Γ A) (h₂ : Provable Γ (Formula.imp A B)) : Provable Γ B
-  | AndIntro (h₁ : Provable Γ A) (h₂ : Provable Γ B) : Provable Γ (Formula.and A B)
-  | AndElimL (h : Provable Γ (Formula.and A B)): Provable Γ A
-  | AndElimR (h : Provable Γ (Formula.and A B)): Provable Γ B
-  | OrIntroL (h : Provable Γ A) : Provable Γ (Formula.or A B)
-  | OrIntroR (h : Provable Γ B) : Provable Γ (Formula.or A B)
-  | OrElim (h₁ : Provable Γ (Formula.or A B)) (h₂ : Provable (A :: Γ) C) (h₃ : Provable (B :: Γ) C) : Provable Γ (Formula.and A B)
-  | Exp (h : Provable Γ Formula.bot) : Provable Γ A
-  | LEM : Provable Γ (Formula.or A (Formula.not A))
-infix:50 " ⊢ " => Provable
+-- def Formula.toStr : Formula → String
+--   | atom s => s
+--   | bot => "⊥"
+--   | not A => s!"¬({A.toStr})"
+--   | imp A B => s!"({A.toStr} ⇒ {B.toStr})"
+--   | and A B => s!"({A.toStr} ∧ {B.toStr})"
+--   | or A B  => s!"({A.toStr} ∨ {B.toStr})"
+--   | iff A B => s!"({A.toStr} ↔ {B.toStr})"
 
--- Deriving (Top Down)
 inductive Rule where
-  | Intro
-  | Elim
+  | assume
+  | imp_intro
+  | imp_elim
+  | and_intro
+  | and_elim_left
+  | and_elim_right
+  | or_intro_left
+  | or_intro_right
+  | or_elim
+  | not_intro
+  | not_elim
+  | exp
+  | lem
+  | dne
+  | raa
 deriving Repr, DecidableEq
 
-inductive Label where
-  | Imp | And | Or | Not
-  | Exp | LEM | DNE | RAA
-  | Assume
-deriving Repr, DecidableEq
-
-inductive Side where
-  | Left
-  | Right
-  | None
-deriving Repr, DecidableEq
-
--- NodeInfo
-structure NodeInfo where
-  rule : Rule := Rule.Intro
-  label : Label := Label.Assume
-  side : Side := Side.None
-deriving Repr, DecidableEq
-
--- ProofTree
-inductive ProofTree where
-  | assumption (info : NodeInfo) (F : Formula)
-  | unary (info : NodeInfo) (T : ProofTree)
-  | binary (info : NodeInfo) (T₁ T₂ : ProofTree)
-  | trinary (info : NodeInfo) (T₁ T₂ T₃ : ProofTree)
-deriving Repr, DecidableEq
-
--- ProofState
-structure ProofState where
-  hypothesis : List Formula
-  consequence : Formula
-  tree : ProofTree
+inductive Tree where
+  | leaf (A : Formula) : Tree
+  -- | node (premisses : List Tree) (rule : Rule) (conclusion : Formula) : Tree
+  | unary (T : Tree) (rule : Rule) (C : Formula) : Tree
+  | binary (T₁ T₂ : Tree) (rule : Rule) (C : Formula) : Tree
+  | trinary (T₁ T₂ T₃ : Tree) (rule : Rule) (C : Formula) : Tree
 deriving Repr
 
--- assumption rule
-def Assume (A : Formula) : Option ProofState :=
-  let tree := ProofTree.assumption {} A
-  some {
-    hypothesis := [A]
-    consequence := A
-    tree := tree }
+instance : Inhabited Tree where
+  default := Tree.leaf default
 
--- inference rule
-def ImpIntro (A : Formula) (P : ProofState) : Option ProofState :=
-  let newH := P.hypothesis.filter (fun x => x != A)
-  let newF := Formula.imp A P.consequence
-  let info : NodeInfo := {
-    rule := Rule.Intro
-    label := Label.Imp }
-  let newT := ProofTree.unary info P.tree
-  some { P with
-    hypothesis := newH
-    consequence := newF
-    tree := newT }
-def Imp_I (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => ImpIntro A P)
+abbrev Context := List Formula
 
-def ImpElim (minor major : ProofState) : Option ProofState :=
-  match major.consequence with
-  | Formula.imp A B =>
-    if A == minor.consequence then
-      let newH := minor.hypothesis ∪ major.hypothesis
-      let info : NodeInfo := {
-        rule := Rule.Elim
-        label := Label.Imp }
-      let newT := ProofTree.binary info minor.tree major.tree
-      some {
-        hypothesis := newH
-        consequence := B
-        tree := newT }
-    else none
-  | _ => none
-def Imp_E (minor major : Option ProofState) : Option ProofState := major.bind (fun M => minor.bind (fun m => ImpElim m M))
+structure proof where
+  hypothesis : Context
+  consequence : Formula
+  tree : Tree
+deriving Repr
 
-def AndIntro (P₁ P₂ : ProofState) : Option ProofState :=
-  let newH := P₁.hypothesis ∪ P₂.hypothesis
-  let newF := Formula.and P₁.consequence P₂.consequence
-  let info : NodeInfo := {
-      rule := Rule.Intro
-      label := Label.And }
-  let newT := ProofTree.binary info P₁.tree P₂.tree
-  some {
-    hypothesis := newH
-    consequence := newF
-    tree := newT }
-def And_I (P₁ P₂ : Option ProofState) : Option ProofState := P₁.bind (fun P₁ => P₂.bind (fun P₂ => AndIntro P₁ P₂))
+instance : Inhabited proof where
+  default := {
+    hypothesis := []
+    consequence := default
+    tree := default
+  }
 
-def AndElim (d : Side) (P : ProofState) : Option ProofState :=
+inductive ProofError
+  | failed
+  | not_found_assumption (A : Formula)
+  | major_mismatch (rule : Rule) (expected : Formula) (actual : Formula)
+  | minor_mismatch (rule : Rule) (expected : Formula) (actual : Formula)
+deriving Repr, BEq
+
+instance : Lean.ToMessageData ProofError where
+  toMessageData
+    | .failed => m!"Proof was Failed !"
+    | .not_found_assumption A => m!"Not Assumed hypothesis {repr A} !"
+    | .major_mismatch rule expected actual =>
+      m!"{repr rule} is not able to apply the major premises {repr actual} !\n Expected Formula : such {repr expected}."
+    | .minor_mismatch rule expected actual =>
+      m!"{repr rule} is not able to apply the minor premises {repr actual} !\n Expected Formula : such {repr expected}."
+
+-- abbrev Proof := ReaderT Context Option proof
+abbrev Proof := ReaderT Context (Except ProofError) proof
+
+-- instance : Repr Proof where
+--   reprPrec P prec :=
+--     match P.run [] with
+--     | some p => reprPrec p prec
+--     | none => "Proof Verification Failed"
+instance : Repr Proof where
+  reprPrec P _ :=
+    match P.run [] with
+    | Except.ok p => repr p
+    | Except.error e => repr e
+
+open Formula ProofError
+
+def push (A : Formula) (premises : Context) : Context :=
+  A :: premises
+
+def discharge (A : Formula) (premises : Context) : Except ProofError Context :=
+  if premises.contains A then
+    Except.ok (premises.filter (fun x => x != A))
+  else Except.error (not_found_assumption A)
+
+def merge (premises₁ premises₂ : Context) : Context :=
+  (premises₁ ++ premises₂).eraseDups
+
+def Assume (A : Formula) (P : Proof) : Proof :=
+  withReader (push A) P
+
+def Take (A : Formula) : Proof := do
+  let ctx ← read
+  if ctx.contains A then
+    pure {
+      hypothesis := [A]
+      consequence := A
+      tree := Tree.leaf A
+    }
+  else throw (not_found_assumption A)
+
+def Imp_Intro (A : Formula) (premises : Proof) : Proof := do
+  let P ← premises
+  let rule := Rule.imp_intro
+  let prem ← discharge A P.hypothesis
+  let cons := .imp A P.consequence
+  pure { P with
+    hypothesis := prem
+    consequence := cons
+    tree := Tree.unary P.tree rule cons
+  }
+
+def Imp_Elim (minor major : Proof) : Proof := do
+  let Pₗ ← minor
+  let Pᵣ ← major
+  match Pᵣ.consequence with
+  | .imp A B =>
+    if Pₗ.consequence == A then
+      let rule := Rule.imp_elim
+      let prem := merge Pₗ.hypothesis Pᵣ.hypothesis
+      let cons := B
+      pure {
+        hypothesis := prem
+        consequence := cons
+        tree := Tree.binary Pₗ.tree Pᵣ.tree rule cons
+      }
+    else throw (minor_mismatch Rule.imp_elim A Pᵣ.consequence)
+  | _ =>
+    let A := atom "A"
+    let B := atom "B"
+    throw (major_mismatch Rule.imp_elim (.imp A B) Pₗ.consequence)
+
+def And_Intro (left right : Proof) : Proof := do
+  let Pₗ ← left
+  let Pᵣ ← right
+  let rule := Rule.and_intro
+  let prem := merge Pₗ.hypothesis Pᵣ.hypothesis
+  let cons := .and Pₗ.consequence Pᵣ.consequence
+  pure {
+    hypothesis := prem
+    consequence := cons
+    tree := Tree.binary Pₗ.tree Pᵣ.tree rule cons
+  }
+
+def And_Elim_Left (premises : Proof) : Proof := do
+  let P ← premises
   match P.consequence with
-  | Formula.and A B =>
-    let info : NodeInfo := {
-        rule := Rule.Elim
-        label := Label.And
-        side := d }
-    let newT := ProofTree.unary info P.tree
-    some { P with
-      consequence := if d == Side.Left then A else B
-      tree := newT }
-  | _ => none
-def And_E (d : Side) (P : Option ProofState) : Option ProofState := P.bind (fun P => AndElim d P)
+  | .and A _ =>
+    let rule := Rule.and_elim_left
+    let prem := P.hypothesis
+    let cons := A
+    pure {
+      hypothesis := prem
+      consequence := cons
+      tree := Tree.unary P.tree rule cons
+    }
+  | _ =>
+    let A := atom "A"
+    let B := atom "B"
+    throw (major_mismatch Rule.and_elim_left (.and A B) P.consequence)
 
-def OrIntro (A : Formula) (d : Side) (P : ProofState) : Option ProofState :=
-  let newF := if d == Side.Left then (Formula.or P.consequence A) else (Formula.or A P.consequence)
-  let info : NodeInfo := {
-      rule := Rule.Intro
-      label := Label.Or
-      side := d }
-  let newT := ProofTree.unary info P.tree
-  some { P with
-    consequence := newF
-    tree := newT }
-def Or_I (A : Formula) (d : Side) (P : Option ProofState) : Option ProofState := P.bind (fun P => OrIntro A d P)
+def And_Elim_Right (premises : Proof) : Proof := do
+  let P ← premises
+  match P.consequence with
+  | .and _ B =>
+    let rule := Rule.and_elim_right
+    let prem := P.hypothesis
+    let cons := B
+    pure {
+      hypothesis := prem
+      consequence := cons
+      tree := Tree.unary P.tree rule cons
+    }
+  | _ =>
+    let A := atom "A"
+    let B := atom "B"
+    throw (major_mismatch Rule.and_elim_right (.and A B) P.consequence)
 
-def OrElim (major left right : ProofState) : Option ProofState :=
-  match major.consequence with
-  | Formula.or A B =>
-    if left.consequence == right.consequence then
-      let newH := major.hypothesis ∪ left.hypothesis.filter (fun x => x != A) ∪ right.hypothesis.filter (fun x => x != B)
-      let newF := left.consequence
-      let info : NodeInfo := {
-          rule := Rule.Elim
-          label := Label.Or }
-      let newT := ProofTree.trinary info major.tree left.tree right.tree
-      some {
-        hypothesis := newH
-        consequence := newF
-        tree := newT }
-      else none
-  | _ => none
-def Or_E (major left right : Option ProofState) : Option ProofState := major.bind (fun M => left.bind (fun L => right.bind (fun R => OrElim M L R)))
 
-def NotIntro (A : Formula) (P : ProofState) : Option ProofState :=
-  if P.consequence == Formula.bot then
-    let newH := P.hypothesis.filter (fun x => x != A)
-    let newF := Formula.not A
-    let info : NodeInfo := {
-      rule := Rule.Intro
-      label := Label.Not }
-    let newT := ProofTree.unary info P.tree
-    some { P with
-      hypothesis := newH
-      consequence := newF
-      tree := newT }
-  else none
-def Not_I (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => NotIntro A P)
+def Or_Intro_Left (A : Formula) (premises : Proof) : Proof := do
+  let P ← premises
+  let rule := Rule.or_intro_left
+  let prem := P.hypothesis
+  let cons := .or A P.consequence
+  pure {
+    hypothesis := prem
+    consequence := cons
+    tree := Tree.unary P.tree rule cons
+  }
 
-def NotElim (minor major : ProofState) : Option ProofState :=
-  match major.consequence with
-  | Formula.imp A Formula.bot =>
-    if A == minor.consequence then
-      let newH := minor.hypothesis ∪ major.hypothesis
-      let info : NodeInfo := {
-        rule := Rule.Elim
-        label := Label.Not }
-      let newT := ProofTree.binary info minor.tree major.tree
-      some {
-        hypothesis := newH
-        consequence := Formula.bot
-        tree := newT }
-    else none
-  | _ => none
-def Not_E (minor major : Option ProofState) : Option ProofState := major.bind (fun M => minor.bind (fun m => NotElim m M))
+def Or_Intro_Right (B : Formula) (premises : Proof) : Proof := do
+  let P ← premises
+  let rule := Rule.or_intro_right
+  let prem := P.hypothesis
+  let cons := .or P.consequence B
+  pure {
+    hypothesis := prem
+    consequence := cons
+    tree := Tree.unary P.tree rule cons
+  }
 
-def Law_of_EXP (A : Formula) (P : ProofState) : Option ProofState :=
-  if P.consequence == Formula.bot then
-    let info : NodeInfo := {
-      rule := Rule.Elim -- ⊥ を取り除くという意味合い
-      label := Label.Exp }
-    let newT := ProofTree.unary info P.tree
-    some { P with
-      consequence := A
-      tree := newT }
-  else none
-def EXP (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => Law_of_EXP A P)
+def Or_Elim (major left right : Proof) : Proof := do
+  let P ← major
+  let Pₗ ← left
+  let Pᵣ ← right
+  match P.consequence with
+  | .or A B =>
+    if Pₗ.consequence == Pᵣ.consequence then
+      let rule := Rule.or_elim
+      let Δₗ ← discharge A Pₗ.hypothesis
+      let Δᵣ ← discharge B Pᵣ.hypothesis
+      let prem := merge P.hypothesis (merge Δₗ Δᵣ)
+      let cons := Pₗ.consequence
+      pure {
+        hypothesis := prem
+        consequence := cons
+        tree := Tree.trinary P.tree Pₗ.tree Pᵣ.tree rule cons
+      }
+    else throw (minor_mismatch Rule.or_elim Pₗ.consequence Pᵣ.consequence)
+  | _ =>
+    let A := atom "A"
+    let B := atom "B"
+    throw (major_mismatch Rule.or_elim (.or A  B) P.consequence)
 
-def Law_of_LEM (A : Formula) (P : ProofState) : Option ProofState :=
-  let newF := Formula.or A (Formula.not A)
-  let info : NodeInfo := {
-    rule := Rule.Intro -- 仮定無しで結論づけるという意味合い
-    label := Label.LEM }
-  let newT := ProofTree.assumption info newF
-  some { P with
-    consequence := newF
-    tree := newT }
-def LEM (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => Law_of_LEM A P)
+def Not_Intro (A : Formula) (premises : Proof) : Proof := do
+  let P ← premises
+  let rule := Rule.not_intro
+  let prem ← discharge A P.hypothesis
+  let cons := .not A
+  pure { P with
+    hypothesis := prem
+    consequence := cons
+    tree := Tree.unary P.tree rule cons
+  }
 
-def Law_of_DNE (A : Formula) (P : ProofState) : Option ProofState :=
-  if P.consequence == Formula.not (Formula.not A) then
-    let info : NodeInfo := {
-      rule := Rule.Elim -- 仮定無しで結論づけるという意味合い
-      label := Label.DNE }
-    let newT := ProofTree.unary info P.tree
-    some { P with
-      consequence := A
-      tree := newT }
-  else none
-def DNE (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => Law_of_DNE A P)
+def Not_Elim (minor major : Proof) : Proof := do
+  let Pₗ ← minor
+  let Pᵣ ← major
+  match Pᵣ.consequence with
+  | .imp A .bot =>
+    if Pₗ.consequence == A then
+      let rule := Rule.not_elim
+      let prem := merge Pₗ.hypothesis Pᵣ.hypothesis
+      let cons := .bot
+      pure {
+        hypothesis := prem
+        consequence := cons
+        tree := Tree.binary Pₗ.tree Pᵣ.tree rule cons
+      }
+    else throw (minor_mismatch Rule.not_elim A Pᵣ.consequence)
+  | _ =>
+    let A := atom "A"
+    throw (major_mismatch Rule.not_elim (.not A) Pₗ.consequence)
 
-def Law_of_RAA (A : Formula) (P : ProofState) : Option ProofState :=
-  if P.consequence == Formula.bot then
-    let newH := P.hypothesis.filter (fun x => x != Formula.not A)
-    let info : NodeInfo := {
-      rule := Rule.Intro -- RAAを導入するという意味合い
-      label := Label.RAA }
-    let newT := ProofTree.unary info P.tree
-    some { P with
-      hypothesis := newH
-      consequence := A
-      tree := newT }
-  else none
-def RAA (A : Formula) (P : Option ProofState) : Option ProofState := P.bind (fun P => Law_of_RAA A P)
+def EXP (A : Formula) (premises : Proof) : Proof := do
+  let P ← premises
+  match P.consequence with
+  | .bot =>
+    let rule := Rule.exp
+    let prem := P.hypothesis
+    let cons := A
+    pure { P with
+      hypothesis := prem
+      consequence := cons
+      tree := Tree.unary P.tree rule cons
+    }
+  | _ => throw (major_mismatch Rule.exp .bot P.consequence)
 
--- soundness
-namespace ProofState
+def LEM (A : Formula) (premises : Proof) : Proof := do
+  let P ← premises
+  match P.consequence with
+  | .bot =>
+    let rule := Rule.lem
+    let prem ← discharge (.not A) P.hypothesis
+    let cons := A
+    pure {
+      hypothesis := prem
+      consequence := cons
+      tree := Tree.unary P.tree rule cons
+    }
+  | _ => throw (major_mismatch Rule.lem .bot P.consequence)
 
--- ProofState → Prop
-def toProp (P : ProofState) : Prop :=
-  Provable P.hypothesis P.consequence
+def DNE (premises : Proof) : Proof := do
+  let P ← premises
+  match P.consequence with
+  | .not (.not A) =>
+    let rule := Rule.dne
+    let prem := P.hypothesis
+    let cons := A
+    pure {
+      hypothesis := prem
+      consequence := cons
+      tree := Tree.unary P.tree rule cons
+    }
+  | _ =>
+    let A := atom "A"
+    throw (major_mismatch Rule.dne (.not (.not A)) P.consequence)
 
-end ProofState
+open Lean.Parser.Tactic
 
--- theorem ImpIntro_is_valid (A : Formula) (P : ProofState) :
---   P.toProp → ∀ S : ProofState, ImpIntro P A = some S -> S.toProp := by
---   sorry
+syntax "unary" tactic "yields" term : tactic
+macro_rules
+  | `(tactic| unary $seq yields $rule) =>
+    `(tactic| refine $rule ?_ ; {$seq})
+
+syntax "binary" tactic* "yields" term : tactic
+macro_rules
+  | `(tactic| binary $seq1 $seq2 yields $rule) =>
+    `(tactic| refine $rule ?_ ?_ ; {$seq1} ; {$seq2})
+
+syntax "trinary" tactic* "yields" term : tactic
+macro_rules
+  | `(tactic| trinary $seq1 $seq2 $seq3 yields $rule) =>
+    `(tactic| refine $rule ?_ ?_ ?_ ; {$seq1} ; {$seq2} ; {$seq3})
+
+macro "take" f:term : tactic => `(tactic| exact Take $f)
+macro "assume" f:term : tactic => `(tactic| refine Assume $f ?_)
+
+macro "imp_I" f:term : tactic => `(tactic| refine Imp_Intro $f ?_)
+-- macro "imp_I_end" f:term : tactic => `(tactic| exact Imp_Intro ($f) ‹Proof›)
+macro "and_I" : tactic => `(tactic| refine And_Intro ?_ ?_)
+macro "and_EL" : tactic => `(tactic| refine And_Elim_Left ?_)
+macro "and_ER" : tactic => `(tactic| refine And_Elim_Right ?_)

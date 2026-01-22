@@ -1,53 +1,76 @@
+-- import ProofWidgets.Component.Markdown
 import MathProject.prooftree.prop
-open Formula
+import MathProject.prooftree.tree_to_latex
+
+open Formula MyStyle
 
 def A := atom "A"
 def B := atom "B"
+def C := atom "C"
 
--- open Provable
-theorem t1 : [A] ⊢ A := by
-  apply Provable.Axiom
-  trivial
+def P : Proof :=
+  Assume (A ∧ B)
+  <|
+  And_Intro
+  (And_Elim_Right <| Take (A ∧ B))
+  (And_Elim_Left <| Take (A ∧ B))
+  |>
+  Imp_Intro (A ∧ B)
 
-theorem t2 : [] ⊢ A ⇒ A := by
-  exact Provable.ImpIntro t1
+def P1 : Proof := by
+  assume A ∧ B
+  unary
+    binary
+    · unary
+        take A ∧ B
+      yields And_Elim_Right
+    · unary
+        take A ∧ B
+      yields And_Elim_Left
+    yields And_Intro
+  yields Imp_Intro (A ∧ B)
 
-theorem t3 : [A, B] ⊢ A ∧ B := by
-  apply Provable.AndIntro
-  · apply Provable.Axiom
-    trivial
-  · apply Provable.Axiom
-    trivial
+def P2 : Proof := by
+  assume A ∧ B
+  imp_I A ∧ B
+  and_I
+  · and_ER
+    take A ∧ B
+  · and_EL
+    take A ∧ B
 
-theorem t4 : [] ⊢ A ⇒ B ⇒ A ∧ B := by
-  apply Provable.ImpIntro
-  apply Provable.ImpIntro
-  apply Provable.AndIntro
-  · apply Provable.Axiom
-    trivial
-  · apply Provable.Axiom
-    trivial
-
-def P1 : Option ProofState := Assume A
+#eval P
 #eval P1
-
-def P2 : Option ProofState := by
-  apply Imp_I A
-  exact (Assume A)
 #eval P2
 
-def P3 : Option ProofState := by
-  apply And_I
-  · exact Assume A
-  · exact Assume B
-#eval P3
+#eval (¬A).toLatex
+#eval (¬¬A).toLatex
 
-def P4 : Option ProofState := by
-  apply Imp_I A
-  apply Imp_I B
-  apply And_I
-  · exact Assume A
-  · exact Assume B
-#eval P4
+#eval (A ⇒ B).toLatex
+#eval (A ⇒ ⊥).toLatex
+#eval (A ⇒ B ⇒ C).toLatex
+#eval (A ⇒ (B ⇒ C)).toLatex
+#eval ((A ⇒ B) ⇒ C).toLatex
 
--- example : [A] ⊢ A := by
+#eval (A ∧ B).toLatex
+#eval (A ∧ B ∧ C).toLatex
+#eval (A ∧ (B ∧ C)).toLatex
+#eval ((A ∧ B) ∧ C).toLatex
+
+#eval (A ∨ B).toLatex
+#eval (A ∨ B ∨ C).toLatex
+#eval (A ∨ (B ∨ C)).toLatex
+#eval ((A ∨ B) ∨ C).toLatex
+
+#eval (A ↔ B).toLatex
+#eval (A ↔ B ↔ C).toLatex
+#eval (A ↔ (B ↔ C)).toLatex
+#eval ((A ↔ B) ↔ C).toLatex
+
+#eval (A ∨ B ∧ C).toLatex
+#eval (A ∧ B ∨ C).toLatex
+#eval (¬A ∧ B ⇒ C).toLatex
+#eval (A ⇒ ¬B ∧ C).toLatex
+
+#eval IO.println (P.run []).toOption.get!.tree.toLatex
+#eval IO.println P.toLatex.get!
