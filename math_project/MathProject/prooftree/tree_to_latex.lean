@@ -4,16 +4,16 @@ namespace Rule
 
 def toLatex (rule : Rule) : String :=
   match rule with
-  | imp_intro => "$\\to$I"
-  | imp_elim => "$\\to$E"
-  | and_intro => "$\\land$I"
-  | and_elim_left => "$\\land$E-L"
-  | and_elim_right => "$\\land$E-R"
-  | or_intro_left => "$\\lor$I-L"
-  | or_intro_right => "$\\lor$I-R"
-  | or_elim => "$\\lor$E"
-  | not_intro => "$\\not$I"
-  | not_elim => "$\\not$E"
+  | imp_intro => r"$\to$\,I"
+  | imp_elim => r"$\to$\,E"
+  | and_intro => r"$\land$\,I"
+  | and_elim_left => r"$\land$\,E-L"
+  | and_elim_right => r"$\land$\,E-R"
+  | or_intro_left => r"$\lor$\,I-L"
+  | or_intro_right => r"$\lor$\,I-R"
+  | or_elim => r"$\lor$\,E"
+  | not_intro => r"$\not$\,I"
+  | not_elim => r"$\not$\,E"
   | exp => "EXP"
   | lem => "LEM"
   | dne => "DNE"
@@ -37,7 +37,7 @@ def toLatex (A : Formula) (parentPrec : Nat := 0) : String :=
   let body :=
     match A with
     | atom s => s
-    | bot => s!"\\bot"
+    | bot => r"\bot"
     | not A  =>  s!"\\neg {A.toLatex 40}"
     | imp A B => s!"{A.toLatex 26} \\to {B.toLatex 25}"
     | and A B => s!"{A.toLatex 31} \\land {B.toLatex 30}"
@@ -55,41 +55,95 @@ namespace Tree
 def toLatex (T : Tree) : String :=
   match T with
   | .leaf C =>
-    "\\AxiomC{" ++ s!"${C.toLatex}$" ++ "}"
+    r"\AxiomC{" ++ s!"${C.toLatex}$}"
   | .unary T rule C =>
-    s!"{T.toLatex}\n" ++
-    "\\RightLabel{\\scriptsize " ++ s!"{rule.toLatex}" ++ "}\n" ++
-    "\\UnaryInfC{" ++ s!"${C.toLatex}$" ++ "}"
+    String.intercalate "\n" [
+      s!"{T.toLatex}",
+      r"\RightLabel{\ " ++ s!"{rule.toLatex}}",
+      r"\UnaryInfC{" ++ s!"${C.toLatex}$}"
+    ]
   | .binary T₁ T₂ rule C =>
-    s!"{T₁.toLatex}\n" ++
-    s!"{T₂.toLatex}\n" ++
-    "\\RightLabel{\\scriptsize " ++ s!"{rule.toLatex}" ++ "}\n" ++
-    "\\BinaryInfC{" ++ s!"${C.toLatex}$" ++ "}"
+    String.intercalate "\n" [
+      s!"{T₁.toLatex}",
+      s!"{T₂.toLatex}",
+      r"\RightLabel{\ " ++ s!"{rule.toLatex}}",
+      r"\BinaryInfC{" ++ s!"${C.toLatex}$}"
+    ]
   | .trinary T₁ T₂ T₃ rule C =>
-    s!"{T₁.toLatex}\n" ++
-    s!"{T₂.toLatex}\n" ++
-    s!"{T₃.toLatex}\n" ++
-    "\\RightLabel{\\scriptsize " ++ s!"{rule.toLatex}" ++ "}\n" ++
-    "\\TrinaryInfC{" ++ s!"{C.toLatex}" ++ "}"
+    String.intercalate "\n" [
+      s!"{T₁.toLatex}",
+      s!"{T₂.toLatex}",
+      s!"{T₃.toLatex}",
+      r"\RightLabel{\ " ++ s!"{rule.toLatex}}",
+      r"\TrinaryInfC{" ++ s!"{C.toLatex}}"
+    ]
 
 end Tree
 
 namespace Proof
 
+def toTree (P : Proof) : String := Id.run do
+  let mut i : Nat := 0
+  match P.run [] with
+  | Except.ok p =>
+    match p.tree with
+    | .leaf C =>
+      if p.hypothesis.contains C then
+        r"\AxiomC{" ++ s!"${C.toLatex}$}"
+      else
+        r"\AxiomC{" ++ s!"$[{C.toLatex}]^{i}$}"
+    | .unary T rule C =>
+      match rule with
+      | .imp_intro | .or_elim| .not_intro =>
+        i := i + 1
+      | _ => pure ()
+      String.intercalate "\n" [
+        s!"{T.toLatex}",
+        r"\RightLabel{\ " ++ s!"{rule.toLatex}}",
+        r"\UnaryInfC{" ++ s!"${C.toLatex}$}"
+      ]
+    | .binary T₁ T₂ rule C =>
+      String.intercalate "\n" [
+        s!"{T₁.toLatex}",
+        s!"{T₂.toLatex}",
+        r"\RightLabel{\ " ++ s!"{rule.toLatex}}",
+        r"\BinaryInfC{" ++ s!"${C.toLatex}$}"
+      ]
+    | .trinary T₁ T₂ T₃ rule C =>
+      String.intercalate "\n" [
+        s!"{T₁.toLatex}",
+        s!"{T₂.toLatex}",
+        s!"{T₃.toLatex}",
+        r"\RightLabel{\ " ++ s!"{rule.toLatex}}",
+        r"\TrinaryInfC{" ++ s!"{C.toLatex}}"
+      ]
+  | _ => ""
+
 def toLatex (P : Proof) : Option String :=
   match P.run [] with
   | Except.ok p =>
-    let proofs := p.tree.toLatex
-    "\\documentclass[border=10pt]{standalone}\n\n" ++
-    "\\usepackage{bussproofs}\n" ++
-    "\\usepackage{amssymb}\n" ++
-    "\\usepackage{amsmath}\n\n" ++
-    "\\begin{document}\n" ++
-    -- "\\begin{prooftree}\n" ++
-    s!"{proofs}\n" ++
-    "\\DisplayProof\n" ++
-    -- "\\end{prooftree}\n" ++
-    "\\end{document}"
+    let source := [
+      r"\documentclass[border=10pt]{standalone}",
+      r"\usepackage{bussproofs}",
+      r"\usepackage{amssymb}",
+      r"\usepackage{amsmath}",
+      r"\begin{document}",
+      p.tree.toLatex,
+      r"\DisplayProof",
+      r"\end{document}"
+    ]
+    String.intercalate "\n" source
   | _ => none
+
+def get_prooftree (P : Proof) : String :=
+  let source := [
+    r"\begin{prooftree}",
+    P.toTree,
+    r"\end{prooftree}"
+  ]
+  String.intercalate "\n" source
+  -- match P.run [] with
+  -- | Except.ok p =>
+  -- | _ => ""
 
 end Proof
