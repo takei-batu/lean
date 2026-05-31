@@ -101,8 +101,21 @@ example : ¬p ∨ ¬q → ¬(p ∧ q) :=
 example : ¬(p ∧ ¬p) := fun ⟨ hp , hnp ⟩ => hnp hp
 
 example : p ∧ ¬q → ¬(p → q) := fun ⟨ h₁ , h₂ ⟩ => fun g => h₂ (g h₁)
-example : ¬p → (p → q) := sorry
-example : (¬p ∨ q) → (p → q) := sorry
-example : p ∨ False ↔ p := sorry
-example : p ∧ False ↔ False := sorry
-example : (p → q) → (¬q → ¬p) := sorry
+
+example : ¬p → (p → q) := fun hnp => fun hp => absurd hp hnp
+
+example : (¬p ∨ q) → (p → q) := fun h => Or.elim h (fun hnp => fun hp => absurd hp hnp) (fun hq => fun _ => hq)
+
+example : p ∨ False ↔ p :=
+⟨
+  fun h => Or.elim h (fun hp => hp) (fun c => c.elim),
+  fun hp => Or.inl hp
+⟩
+
+example : p ∧ False ↔ False :=
+⟨
+  fun ⟨ _ , c ⟩ => c,
+  fun c => c.elim
+⟩
+
+example : (p → q) → (¬q → ¬p) := fun h => fun hnq => fun hp => absurd (h hp) hnq
