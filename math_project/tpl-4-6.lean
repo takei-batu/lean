@@ -57,7 +57,7 @@ def even (n : Nat) : Prop := ∃ x : Nat, n = 2 * x
 
 def prime (n : Nat) : Prop := n > 1 ∧ ∀ a : Nat, divides a n → a = 1 ∨ a = n
 
-def infinitely_many_primes : Prop := ∀ p : Nat, prime p → ∃ q : Nat, prime q ∧ p < q
+def infinitely_many_primes : Prop := ∀ p : Nat, ∃ q : Nat, prime q ∧ p < q
 
 def Fermat_prime (n : Nat) : Prop := prime n ∧ ∃ k : Nat, n = 2 ^ (2 ^ k) + 1
 
