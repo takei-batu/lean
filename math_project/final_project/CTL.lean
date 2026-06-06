@@ -55,7 +55,7 @@ def lfp (univ : Finset State) (step : Finset State → Finset State) (S : Finset
   if _guard : fix ⊆ univ then -- univ が満たすべき条件
     if _h : fix = S then S else lfp univ step fix
   else S
-  -- 停止性の証明（mathlib の既存の定理を使って証明）
+  -- 停止性の証明
   termination_by univ.card - S.card
   decreasing_by
   have h_fix : fix = S ∪ step S := rfl

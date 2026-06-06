@@ -299,6 +299,10 @@ def solver (path : System.FilePath) := do
       IO.println s!"{A}"
   | none => IO.println "UNSAT"
 
+
+-- カレントディレクトリ
+#eval IO.Process.getCurrentDir
+
 -- 実行テスト
 section test
 
@@ -310,16 +314,38 @@ def test1 : CNF := {{1, 3, -4}, {4}, {2, -3}}
 def test2 : CNF := {{1, 2, -3}, {1, -2}, {-1}, {3}}
 #eval DPLL test2 3
 
--- カレントディレクトリ
-#eval IO.Process.getCurrentDir
-
 def ex := solver "./final_project/example1.cnf"
-#eval ex
+#time #eval ex
 
+-- N-Queen Problem
 def two_queen := solver "./final_project/N=2.cnf"
-#eval two_queen
-
+def three_queen := solver "./final_project/N=3.cnf"
+def four_queen := solver "./final_project/N=4.cnf"
+def five_queen := solver "./final_project/N=5.cnf"
+def six_queen := solver "./final_project/N=6.cnf"
+def seven_queen := solver "./final_project/N=7.cnf"
 def eight_queen := solver "./final_project/N=8.cnf"
-#eval eight_queen
+def nine_queen := solver "./final_project/N=9.cnf"
+def ten_queen := solver "./final_project/N=10.cnf"
+def eleven_queen := solver "./final_project/N=11.cnf"
+def twelve_queen := solver "./final_project/N=12.cnf"
+def thirteen_queen := solver "./final_project/N=13.cnf"
+def fourteen_queen := solver "./final_project/N=14.cnf"
+def fifteen_queen := solver "./final_project/N=15.cnf"
+
+#time #eval two_queen
+#time #eval three_queen
+#time #eval four_queen
+#time #eval five_queen
+#time #eval six_queen
+#time #eval seven_queen
+#time #eval eight_queen
+#time #eval nine_queen
+#time #eval ten_queen
+#time #eval eleven_queen
+#time #eval twelve_queen
+#time #eval thirteen_queen
+#time #eval fourteen_queen
+#time #eval fifteen_queen
 
 end test
