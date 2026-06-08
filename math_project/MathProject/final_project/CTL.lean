@@ -353,7 +353,7 @@ def ME : TS := {
 section test
 
 def ϕ₁ : Formula := .EU (.not (.atom "c₂")) (.atom "c₁")
-def ϕ₂ : Formula := .AG (.imp (.atom "t₁") (.AF (.atom "c₁)")))
+def ϕ₂ : Formula := .AG (.imp (.atom "t₁") (.AF (.atom "c₁")))
 def ϕ₃ : Formula := .EF (.and (.atom "c₁") (.atom "c₂"))
 def ϕ₄ : Formula := .AG (.EF (.and (.atom "n₁") (.atom "n₂")))
 def ϕ₅ : Formula := .EF (.atom "c₁")
