@@ -170,7 +170,6 @@ lemma forward_is_monotonic : ∀ S₁ S₂, S₁ ⊆ S₂ → forward t (t.state
 -- Labeling algorithm
 -- t, s ⊨ ϕ ⇔ s ∈ model t ϕ
 def model (t : TS) (f : Formula) : Finset State :=
-  open Classical in
   match f with
   | .top => t.states -- for all states
   | .atom p => t.states.filter (fun s => (.atom p) ∈ t.label s) -- {s | p ∈ L(s)}
@@ -334,22 +333,21 @@ example (ϕ : Formula) : model t ϕ.AF = model t (.AU .top ϕ) := by
   rw [step_eq]
 
 -- Mutual Exclusion
-def ME : TS :=
-  {
-    states := {0, 1, 2, 3, 4, 5 ,6 , 7, 8},
-    trans := {(0,1),(1,2),(2,3),(1,4),(4,3), (4,0), (3,5), (0,5),(5,6),(6,7), (5,8), (8,7), (8,0), (7,1)},
-    label := fun s : State => match s with
-    | 0 => {.atom "n₁", .atom "n₂"}
-    | 1 => {.atom "t₁", .atom "n₂"}
-    | 2 => {.atom "t₁", .atom "t₂"}
-    | 3 => {.atom "c₁", .atom "t₂"}
-    | 4 => {.atom "c₁", .atom "n₂"}
-    | 5 => {.atom "n₁", .atom "t₂"}
-    | 6 => {.atom "t₁", .atom "t₂"}
-    | 7 => {.atom "t₁", .atom "c₂"}
-    | 8 => {.atom "n₁", .atom "c₂"}
-    | _ => ∅
-  }
+def ME : TS := {
+  states := {0, 1, 2, 3, 4, 5 ,6 , 7, 8},
+  trans := {(0,1),(1,2),(2,3),(1,4),(4,3), (4,0), (3,5), (0,5),(5,6),(6,7), (5,8), (8,7), (8,0), (7,1)},
+  label := fun s : State => match s with
+  | 0 => {.atom "n₁", .atom "n₂"}
+  | 1 => {.atom "t₁", .atom "n₂"}
+  | 2 => {.atom "t₁", .atom "t₂"}
+  | 3 => {.atom "c₁", .atom "t₂"}
+  | 4 => {.atom "c₁", .atom "n₂"}
+  | 5 => {.atom "n₁", .atom "t₂"}
+  | 6 => {.atom "t₁", .atom "t₂"}
+  | 7 => {.atom "t₁", .atom "c₂"}
+  | 8 => {.atom "n₁", .atom "c₂"}
+  | _ => ∅
+}
 
 -- 実行テスト
 section test
