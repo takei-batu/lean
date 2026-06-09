@@ -11,7 +11,7 @@ example : (∀ x, p x → q x) → (∀ x, p x) → (∀ x, q x) :=
   fun h g => fun t => (h t) (g t)
 
 example : (∀ x, p x) ∨ (∀ x, q x) → ∀ x, p x ∨ q x :=
-  fun h => Or.elim h (fun h₁ => fun t => Or.inl (h₁ t)) (fun h₂ => fun t => Or.inr (h₂ t))
+  fun h t => Or.elim h (fun h₁ => Or.inl (h₁ t)) (fun h₂ => Or.inr (h₂ t))
 
 -- 2.
 variable (α : Type) (p q : α → Prop)

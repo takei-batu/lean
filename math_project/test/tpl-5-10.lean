@@ -1,3 +1,24 @@
+theorem test (p q : Prop) (hp : p) (hq : q) : p ∧ q ∧ p := by
+  apply And.intro
+  exact hp
+  apply And.intro
+  exact hq
+  exact hp
+
+theorem test1 (p q : Prop) (hp : p) (hq : q) : p ∧ q ∧ p := by
+  apply And.intro
+  case left => exact hp
+  case right =>
+    apply And.intro
+    case left => exact hq
+    case right => exact hp
+
+example (p q : Prop) : p ∨ q → q ∨ p := by
+  intro h
+  cases h with
+  | inl hp => apply Or.inr; assumption
+  | inr hq => apply Or.inl; exact hq
+
 
 -- 1.
 section chap3
@@ -26,8 +47,8 @@ open Classical
 
 example : (¬q → ¬p) → (p → q) := by
   intro h₁ h₂
-  have em := em q
-  cases em with
+  -- have em := em q
+  cases em q with
   | inl h => assumption
   | inr h =>
     have := h₁ h h₂
@@ -37,8 +58,8 @@ example : p ∨ ¬p := by exact em p
 
 example : (((p → q) → p) → p) := by
   intro h₁
-  cases Classical.em p with
-  | inl hp => exact hp
+  cases em p with
+  | inl hp => assumption
   | inr hnp =>
       apply h₁
       intro hp
