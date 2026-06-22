@@ -115,11 +115,22 @@ inductive Exec : Stmt → Store → Store → Prop where
     Exec (AssignStmt x e) store (update store x (eval e store))
   | SeqExec (s1 s2: Stmt) (store1 store2 store3 : Store) :
     Exec s1 store1 store2 → Exec s2 store2 store3 → Exec (SeqStmt s1 s2) store1 store3
---  | IfTrueExec (b : BExp) (s1 s2: Stmt) (store1 store2 : Store):
--- | IfFalseExec (b : BExp) (s1 s2: Stmt) (store1 store2 : Store) :
---  | WhileExecFalse (b : BExp) (s : Stmt) (store : Store) :
--- | WhileExecTrue (b : BExp) (s : Stmt) (store1 store2 store3 : Store) :
-
+  | IfTrueExec (b : BExp) (s1 s2: Stmt) (store1 store2 : Store):
+    beval b store1 →
+    Exec s1 store1 store2 →
+    Exec (IfStmt b s1 s2) store1 store2
+  | IfFalseExec (b : BExp) (s1 s2: Stmt) (store1 store2 : Store) :
+    ¬ beval b store1 →
+    Exec s2 store1 store2 →
+    Exec (IfStmt b s1 s2) store1 store2
+  | WhileExecFalse (b : BExp) (s : Stmt) (store : Store) :
+    ¬ beval b store →
+    Exec (WhileStmt b s) store store
+  | WhileExecTrue (b : BExp) (s : Stmt) (store1 store2 store3 : Store) :
+    beval b store1 →
+    Exec s store1 store2 →
+    Exec (WhileStmt b s) store2 store3 →
+    Exec (WhileStmt b s) store1 store3
 
 #check Exec.SkipExec
 
@@ -144,7 +155,37 @@ theorem exec_deterministic (s : Stmt) (store store1 store2 : Store) :
         have : store12 = store' := ih1 store' exec14
         rw[←this] at exec15
         exact ih2 store2 exec15
-
+    | IfTrueExec b s1 s2 store1' store2' exec1' exec2' ih =>
+      intro exec2
+      cases exec2 with
+      | IfTrueExec =>
+        apply ih
+        assumption
+      | IfFalseExec =>
+        contradiction
+    | IfFalseExec b s1 s2 store1' store2' exec1' exec2' ih =>
+      intro exec2
+      cases exec2 with
+      | IfTrueExec =>
+        contradiction
+      | IfFalseExec =>
+        apply ih
+        assumption
+    | WhileExecFalse b s' store' bval =>
+      intro exec2
+      cases exec2 with
+      | WhileExecFalse =>
+        rfl
+      | WhileExecTrue =>
+        contradiction
+    | WhileExecTrue b s' store1' store2' store3' bval exec1' exec2' ih1 ih2 =>
+      intro exec2
+      cases exec2 with
+      | WhileExecFalse =>
+        contradiction
+      | WhileExecTrue b' _ _ store4' _ bval' exec3' exec4' =>
+        apply ih2
+        sorry
 
 def semEquiv (s1 s2 : Stmt) :=
   (∀ store1 store2 : Store, Exec s1 store1 store2 ↔ Exec s2 store1 store2)
