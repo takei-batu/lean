@@ -185,7 +185,9 @@ theorem exec_deterministic (s : Stmt) (store store1 store2 : Store) :
         contradiction
       | WhileExecTrue b' _ _ store4' _ bval' exec3' exec4' =>
         apply ih2
-        sorry
+        have := ih1 store4' exec3'
+        rw[this]
+        assumption
 
 def semEquiv (s1 s2 : Stmt) :=
   (∀ store1 store2 : Store, Exec s1 store1 store2 ↔ Exec s2 store1 store2)
