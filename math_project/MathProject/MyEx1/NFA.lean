@@ -165,7 +165,7 @@ lemma reach_q1 (xs : List (Fin 2)) :
     constructor <;> assumption
 
 lemma length_q2 {xs : List (Fin 2)} :
-  2 ∈ hat transition 0 xs → xs.length > 1 := by
+  2 ∈ hat transition 0 xs → xs.length > 0 := by
   intro h
   match xs with
   | [] =>
@@ -184,7 +184,6 @@ lemma reach_q2 (xs : List (Fin 2)) :
   constructor
   · intro h
     have := length_q2 h
-    have : xs.length > 0 := by omega
     obtain ⟨as, a, ha⟩ := exists_append this
     rw[ha, hat_append_single, Finset.mem_biUnion] at h
     use as, a
