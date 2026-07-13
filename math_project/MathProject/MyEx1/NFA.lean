@@ -41,8 +41,8 @@ namespace Example
 def transition : Fin 3 → Fin 2 → Finset (Fin 3)
   | 0, 0 => {0,1}
   | 0, 1 => {0}
-  | 1, 0 => {2}
-  | 1, 1 => {2}
+  | 1, 0 => {0, 2}
+  | 1, 1 => {0, 2}
   | 2, 0 => ∅
   | 2, 1 => ∅
 
