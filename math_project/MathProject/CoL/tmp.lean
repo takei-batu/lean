@@ -57,7 +57,6 @@ def Φ₁ : Position 3 := fun i =>
   | 2 => ⟨⊤, toString 2⟩
 
 #eval List.ofFn Φ₀
-#eval List.ofFn Φ₀
 
 #eval List.ofFn Φ₁
 
