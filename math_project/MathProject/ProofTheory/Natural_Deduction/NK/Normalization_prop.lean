@@ -1,6 +1,6 @@
 import Mathlib.Data.Set.Basic
-import MathProject.Logic.formula
-import MathProject.Logic.prop
+import MathProject.ProofTheory.basic.formula
+import MathProject.ProofTheory.Natural_Deduction.NK.prop
 
 open prop
 open NK

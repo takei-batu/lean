@@ -1,5 +1,5 @@
 import Mathlib.Data.Set.Basic
-import MathProject.Logic.formula
+import MathProject.ProofTheory.basic.formula
 
 open prop
 
