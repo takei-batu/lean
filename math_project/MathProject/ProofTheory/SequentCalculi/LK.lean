@@ -1,7 +1,7 @@
 import MathProject.ProofTheory.SequentCalculi.Basic
 import MathProject.ProofTheory.FirstOrder.formula
 
--- namespace LK
+namespace LK
 
 open Formula
 
@@ -49,6 +49,13 @@ def Provable {𝒮 : Signature} (Γ Δ : List (Formula 𝒮)) : Prop :=
   Nonempty (Derivation Γ Δ)
 
 infix:50 " ⊢ " => Provable
+infix:50 " ⊢ᴸᴷ " => Provable
+
+end LK
+
+open LK
+open Formula
+open Derivation
 
 namespace Derivation
 
@@ -71,12 +78,9 @@ def Axiom_alt (A : Formula 𝒮) : Derivation (A :: Γ) [A] := by
 
 end Derivation
 
--- end LK
+section test
 
-open Formula
--- open LK
 open Derivation
--- variable {𝒮 : Signature}
 
 example : [A, B] ⊢ [and A B] := by
   have P : Derivation [A, B] [and A B] := by
@@ -115,3 +119,5 @@ example : Γ ⊢ [.and A B] → Γ ⊢ [A] ∧ Γ ⊢ [B] := by
       apply WkR
       exact P
     exact ⟨Cut P_wk PB⟩
+
+end test
