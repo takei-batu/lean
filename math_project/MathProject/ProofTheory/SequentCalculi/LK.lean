@@ -10,14 +10,30 @@ variable {𝒮 : Signature}
 inductive Derivation : List (Formula 𝒮) → List (Formula 𝒮) -> Type where
 | Axiom (A : Formula 𝒮) : Derivation [A] [A]
 | BotL : Derivation [.bot] []
-| WkL  : Derivation Γ Δ → Derivation (A :: Γ) Δ
-| WkR : Derivation Γ Δ → Derivation Γ (A :: Δ)
-| CL : Derivation  (A :: A :: Γ) Δ → Derivation  (A :: Γ) Δ
-| CR : Derivation Γ (A :: A :: Δ) → Derivation Γ (A :: Δ)
-| ExL (i j : Nat) : Derivation (Γ.swap i j) Δ → Derivation Γ Δ
-| ExR (i j : Nat) : Derivation Γ (Δ.swap i j) → Derivation Γ Δ
-| AndL₀ :  Derivation (A₀ :: Γ) Δ → Derivation (and A₀ A₁ :: Γ) Δ
-| AndL₁ :  Derivation (A₁ :: Γ) Δ → Derivation (and A₀ A₁ :: Γ) Δ
+| WkL  :
+  Derivation Γ Δ →
+  Derivation (A :: Γ) Δ
+| WkR :
+  Derivation Γ Δ →
+  Derivation Γ (A :: Δ)
+| CL :
+  Derivation  (A :: A :: Γ) Δ →
+  Derivation  (A :: Γ) Δ
+| CR :
+  Derivation Γ (A :: A :: Δ) →
+  Derivation Γ (A :: Δ)
+| ExL (i j : Nat) :
+  Derivation (Γ.swap i j) Δ →
+  Derivation Γ Δ
+| ExR (i j : Nat) :
+  Derivation Γ (Δ.swap i j) →
+  Derivation Γ Δ
+| AndL₀ :
+  Derivation (A₀ :: Γ) Δ →
+  Derivation (and A₀ A₁ :: Γ) Δ
+| AndL₁ :
+  Derivation (A₁ :: Γ) Δ →
+  Derivation (and A₀ A₁ :: Γ) Δ
 | AndR :
   (fst : Derivation Γ (A :: Δ)) →
   (snd : Derivation Γ (B :: Δ)) →
@@ -26,14 +42,22 @@ inductive Derivation : List (Formula 𝒮) → List (Formula 𝒮) -> Type where
   (fst : Derivation (A :: Γ) Δ) →
   (snd : Derivation (B :: Γ) Δ) →
   Derivation (or A B :: Γ) Δ
-| OrR₀ :  Derivation Γ (A₀ :: Δ) → Derivation Γ (or A₀ A₁ :: Δ)
-| OrR₁ :  Derivation Γ (A₁ :: Δ) → Derivation Γ (or A₀ A₁ :: Δ)
+| OrR₀ :
+  Derivation Γ (A₀ :: Δ) →
+  Derivation Γ (or A₀ A₁ :: Δ)
+| OrR₁ :
+  Derivation Γ (A₁ :: Δ) →
+  Derivation Γ (or A₀ A₁ :: Δ)
 | ImpL :
   (fst : Derivation Γ (A :: Δ)) →
   (snd : Derivation (B :: Γ) Δ) →
   Derivation (imp A B :: Γ) Δ
-| ImpR : Derivation (A :: Γ) (B :: Δ) → Derivation Γ (imp A B :: Δ)
-| AllL : Derivation (inst 0 t A :: Γ) Δ → Derivation (forall_ A :: Γ) Δ
+| ImpR :
+  Derivation (A :: Γ) (B :: Δ) →
+  Derivation Γ (imp A B :: Δ)
+| AllL :
+  Derivation (inst 0 t A :: Γ) Δ →
+  Derivation (forall_ A :: Γ) Δ
 | AllR :
   ∀ x : String, (x ∉ FV A ∧ x ∉ FV_Ant Γ) →
   Derivation Γ (inst 0 (Term.fvar x) A :: Δ) →
@@ -42,7 +66,9 @@ inductive Derivation : List (Formula 𝒮) → List (Formula 𝒮) -> Type where
   ∀ x : String, (x ∉ FV A ∧ x ∉ FV_Ant Γ) →
   Derivation (inst 0 (Term.fvar x) A :: Γ) Δ →
   Derivation (exists_ A :: Γ) Δ
-| ExtR : Derivation Γ (inst 0 t A :: Δ) → Derivation Γ (exists_ A :: Δ)
+| ExtR :
+  Derivation Γ (inst 0 t A :: Δ) →
+  Derivation Γ (exists_ A :: Δ)
 
 
 def Provable {𝒮 : Signature} (Γ Δ : List (Formula 𝒮)) : Prop :=
@@ -59,13 +85,15 @@ open Derivation
 
 namespace Derivation
 
-def Cut :
+-- variable {𝒮 : Signature}
+
+def Cut {A : Formula 𝒮} :
   (fst : Derivation Γ (A :: Δ)) →
   (snd : Derivation (A :: Γ) Δ) →
   Derivation Γ Δ := by
   sorry
 
-theorem Cut_adm : Γ ⊢ (A :: Δ) → (A :: Γ) ⊢ Δ → Γ ⊢ Δ := by
+theorem Cut_adm {A : Formula 𝒮} : Γ ⊢ (A :: Δ) → (A :: Γ) ⊢ Δ → Γ ⊢ Δ := by
   sorry
 
 def Axiom_alt (A : Formula 𝒮) : Derivation (A :: Γ) [A] := by
