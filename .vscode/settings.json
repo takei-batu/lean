@@ -1,0 +1,8 @@
+{
+    "lean4.input.customTranslations": {
+        "^G4ip": "ᴳ⁴ⁱᵖ",
+        "^G3ip": "ᴳ³ⁱᵖ",
+        "^LK": "ᴸᴷ",
+        "^LJ": "ᴸᴶ",
+    }
+}

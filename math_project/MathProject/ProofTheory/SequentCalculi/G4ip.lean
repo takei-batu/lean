@@ -11,6 +11,10 @@ inductive Derivation : Multiset (Formula) → Formula -> Type where
 | BotL (C : Formula) :
   (h : bot ∈ Γ := by aesop) →
   Derivation Γ C
+-- | TopR : Derivation Γ top
+-- | TopL :
+--   Derivation Γ A →
+--   Derivation (top ::ₘ Γ) A
 -- | AndL₀ :  Derivation (A₀ ::ₘ Γ) Δ → Derivation (and A₀ A₁ ::ₘ Γ) C
 -- | AndL₁ :  Derivation (A₁ ::ₘ Γ) Δ → Derivation (and A₀ A₁ ::ₘ Γ) C
 | AndL :
@@ -47,12 +51,15 @@ inductive Derivation : Multiset (Formula) → Formula -> Type where
   (fst : Derivation ((imp A₁ B) ::ₘ Γ) (imp A₀ A₁)) →
   (snd : Derivation (B ::ₘ Γ) C) →
   Derivation (imp (imp A₀ A₁) B ::ₘ atom p ::ₘ Γ) C
-| ImpR : Derivation (A ::ₘ Γ) B → Derivation Γ (imp A B)
+| ImpR :
+  Derivation (A ::ₘ Γ) B →
+  Derivation Γ (imp A B)
 
 def Provable (Γ : Multiset Formula) (C : Formula) : Prop :=
   Nonempty (Derivation Γ C)
 
 infix:50 " ⊢ " => Provable
+infix:50 " ⊢ᴳ⁴ⁱᵖ " => Provable
 
 section test
 
