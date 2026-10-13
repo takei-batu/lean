@@ -1,0 +1,1056 @@
+import Mathlib.Data.Multiset.Basic
+import Mathlib.Data.Multiset.ZeroCons
+import Mathlib.Data.Multiset.AddSub
+import MathProject.ProofTheory.Propositional.formula
+
+namespace G3ip
+
+open Formula
+
+/-- G3ip for base of inv system -/
+inductive Derivation : Multiset (Formula) → Formula -> Type where
+| Id :
+  (h : atom p ∈ Γ := by aesop) →
+  Derivation Γ (atom p)
+| BotL (A : Formula) :
+  (h : bot ∈ Γ := by aesop) →
+  Derivation Γ A
+| TopR :
+  Derivation Γ top
+-- | AndL₀ :  Derivation (A₀ ::ₘ Γ) C → Derivation (and A₀ A₁ ::ₘ Γ) C
+-- | AndL₁ :  Derivation (A₁ ::ₘ Γ) C → Derivation (and A₀ A₁ ::ₘ Γ) C
+| AndL :
+  Derivation (A ::ₘ B ::ₘ Γ) C →
+  Derivation (and A B ::ₘ Γ) C
+| AndR :
+  (fst : Derivation Γ A) →
+  (snd : Derivation Γ B) →
+  Derivation Γ (and A B)
+| OrL :
+  (fst : Derivation (A ::ₘ Γ) C) →
+  (snd : Derivation (B ::ₘ Γ) C) →
+  Derivation (or A B ::ₘ Γ) C
+| OrR₀ :
+  Derivation Γ A →
+  Derivation Γ (or A B)
+| OrR₁ :
+  Derivation Γ B →
+  Derivation Γ (or A B)
+| ImpL :
+  (fst : Derivation (imp A B ::ₘ Γ) A) →
+  (snd : Derivation (imp A B ::ₘ B ::ₘ Γ) C) →
+  Derivation (imp A B ::ₘ Γ) C
+| ImpR :
+  Derivation (A ::ₘ Γ) B →
+  Derivation Γ (imp A B)
+
+def Provable (Γ : Multiset Formula) (C : Formula) : Prop :=
+  Nonempty (Derivation Γ C)
+
+infix:50 " ⊢ " => Provable
+infix:50 " ⊢ᴳ³ⁱᵖ " => Provable
+
+end G3ip
+
+open G3ip
+open Formula
+open Derivation
+open Multiset
+
+attribute [simp] Multiset.cons_swap mem_cons_self
+theorem cons_swap_triple (a b c : α) (s : Multiset α) :
+  a ::ₘ b ::ₘ c ::ₘ s = c ::ₘ a ::ₘ b ::ₘ s := by simp
+
+theorem cons_swap_forth (a b c d : α) (s : Multiset α) :
+  a ::ₘ b ::ₘ c ::ₘ d ::ₘ s = c ::ₘ d ::ₘ a ::ₘ b ::ₘ s := by simp
+
+theorem cons_erase_swap [DecidableEq α] {s : Multiset α} {a b c d : α} (hneq : c ≠ d) :
+  a ::ₘ b ::ₘ (c ::ₘ s).erase d = c ::ₘ a ::ₘ b ::ₘ s.erase d := by
+  simp only [←cons_swap_triple, cons_inj_right]
+  exact erase_cons_tail s hneq
+
+theorem erase_cons_tail_of_mem [DecidableEq α] {a x : α} {s : Multiset α} (h_mem : a ∈ s) :
+  (x ::ₘ s).erase a = x ::ₘ s.erase a := by
+  nth_rw 1 [← cons_erase h_mem, cons_swap, erase_cons_head]
+
+-- theorem erase_cons_tail_of_mem [DecidableEq α] (h : a ∈ s) :
+--   (b ::ₘ s).erase a = b ::ₘ s.erase a := by
+--   nth_rw 1 [← cons_erase h_mem, cons_swap, erase_cons_head]
+
+theorem erase_cons_tail_of_mem_double [DecidableEq α] {a x y : α} {s : Multiset α} (h_mem : a ∈ s) :
+  (x ::ₘ y ::ₘ s).erase a = x ::ₘ y ::ₘ s.erase a := by
+  nth_rw 1 [← cons_erase h_mem, cons_swap_triple, erase_cons_head]
+
+lemma cons_erase_eq_of_exists {Γ Γ' : Multiset Formula} {φ ψ : Formula}
+  (h : ∃ cs, Γ = φ ::ₘ cs ∧ Γ' = ψ ::ₘ cs) :
+  Γ = φ ::ₘ Γ.erase φ ∧ Γ' = ψ ::ₘ Γ.erase φ := by
+  obtain ⟨cs, hcs₀, hcs₁⟩ := h
+  -- 1つ目の等式の証明
+  have h_mem : φ ∈ Γ := by
+    rw [hcs₀]
+    simp only[mem_cons_self]
+  have h₀ : Γ = φ ::ₘ Γ.erase φ := (Multiset.cons_erase h_mem).symm
+  -- 2つ目の等式の証明
+  have h₁ : Γ' = ψ ::ₘ Γ.erase φ := by
+    have h_cs : Γ.erase φ = cs := by
+      rw [hcs₀, erase_cons_head]
+    rw [h_cs]
+    exact hcs₁
+  exact ⟨h₀, h₁⟩
+
+section Admissible
+
+namespace Derivation
+
+@[simp]
+def height : Derivation Γ A → Nat
+  | .Id _ => 1
+  | .BotL C _ => 1
+  | .TopR => 1
+  | .AndL D => height D + 1
+  | .AndR D₀ D₁ => height D₀ + height D₁ + 1
+  | .OrL D₀ D₁ => height D₀ + height D₁ + 1
+  | .OrR₀ D => height D + 1
+  | .OrR₁ D => height D + 1
+  | .ImpL D₀ D₁ => height D₀ + height D₁ + 1
+  | .ImpR D => height D + 1
+
+lemma height_eq_of_heq_cast {Γ1 Γ2 : Multiset Formula} {φ1 φ2 : Formula}
+  (hΓ : Γ1 = Γ2) (hφ : φ1 = φ2)
+  {d1 : Derivation Γ1 φ1} {d2 : Derivation Γ2 φ2}
+  (h_heq : HEq d1 d2) : height d1 = height d2 := by
+  -- 証拠を使って Γ と φ を完全に同一にする
+  subst hΓ
+  subst hφ
+  -- 型が完全に一致したので、安全に HEq を Eq に変換できる！
+  have h_eq : d1 = d2 := eq_of_heq h_heq
+  rw [h_eq]
+
+def Identity (A : Formula) :
+  (h : A ∈ Γ := by aesop) →
+  Derivation Γ A := by
+  sorry
+
+def Weakening {Γ A B} (D : Derivation Γ B) : Derivation (A ::ₘ Γ) B := by
+  match D with
+  | .Id h => exact Id (mem_cons_of_mem h)
+  | .BotL _ h => exact BotL _ (mem_cons_of_mem h)
+  | .TopR => exact TopR
+  | .AndR fst snd => exact AndR (Weakening fst) (Weakening snd)
+  | .OrR₀ D' => exact OrR₀ (Weakening D')
+  | .OrR₁ D' => exact OrR₁ (Weakening D')
+  | .ImpR (Γ := Γ') (A := A') (B := B') D' =>
+    have D'' : Derivation (A ::ₘ A' ::ₘ Γ') B' := Weakening D'
+    rw[cons_swap] at D''
+    exact ImpR D''
+  | .AndL (Γ := Γ') (A := A') (B := B') D' =>
+    have D'' : Derivation (A ::ₘ A' ::ₘ B' ::ₘ Γ') B := Weakening D'
+    rw[←cons_swap_triple] at D''
+    rw[cons_swap]
+    exact AndL D''
+  | .OrL (Γ := Γ') (A := A') (B := B') fst snd =>
+    have fst' : Derivation (A ::ₘ A' ::ₘ Γ') B := Weakening fst
+    have snd' : Derivation (A ::ₘ B' ::ₘ Γ') B := Weakening snd
+    rw[cons_swap] at fst' snd' ⊢
+    exact OrL fst' snd'
+  | .ImpL (Γ := Γ') (A := A') (B := B') fst snd =>
+    have fst' : Derivation (A ::ₘ A'.imp B' ::ₘ Γ') A' := Weakening fst
+    have snd' : Derivation (A ::ₘ A'.imp B' ::ₘ B' ::ₘ Γ') B := Weakening snd
+    rw[←cons_swap_triple] at snd'
+    rw[cons_swap] at fst' ⊢
+    exact ImpL fst' snd'
+
+def AndR_inv {Δ A B} : Derivation Δ (A.and B) → Derivation Δ A × Derivation Δ B
+| .BotL _ h => by
+  exact (.BotL A h, .BotL B h)
+| .AndR fst snd => by
+  exact (fst, snd)
+| .AndL (Γ := Γ') (A := A') (B := B') fst => by
+  have ⟨dA, dB⟩ := AndR_inv fst
+  exact (.AndL dA, .AndL dB)
+| .OrL (Γ := Γ') (A := A') (B := B') fst snd => by
+  have ⟨fstA, fstB⟩ := AndR_inv fst
+  have ⟨sndA, sndB⟩ := AndR_inv snd
+  exact (.OrL fstA sndA, .OrL fstB sndB)
+| .ImpL (Γ := Γ') (A := A') (B := B') fst snd => by
+  have ⟨sndA, sndB⟩ := AndR_inv snd
+  exact (.ImpL fst sndA, .ImpL fst sndB)
+
+def ImpR_inv {Δ A B} : Derivation Δ (A.imp B) → Derivation (A ::ₘ Δ) B
+| .BotL _ h => .BotL B (mem_cons_of_mem h)
+| .ImpR D' => D'
+| .AndL (Γ := Γ') (A := A') (B := B') D' => by
+  have D'' := ImpR_inv D'
+  rw [←cons_swap_triple] at D''
+  have res := Derivation.AndL D''
+  rw [cons_swap] at res
+  exact res
+| .OrL (Γ := Γ') (A := A') (B := B') fst snd => by
+  have fst' := ImpR_inv fst
+  rw [cons_swap] at fst'
+  have snd' := ImpR_inv snd
+  rw [cons_swap] at snd'
+  have res := Derivation.OrL fst' snd'
+  rw [cons_swap] at res
+  exact res
+| .ImpL (Γ := Γ') (A := A') (B := B') fst snd => by
+  have fst' := Weakening (A := A) fst
+  rw [cons_swap] at fst'
+  have snd' := ImpR_inv snd
+  rw [←cons_swap_triple] at snd'
+  have res := Derivation.ImpL fst' snd'
+  rw [cons_swap] at res
+  exact res
+
+def AndL_inv_mem {Δ A B C} (D : Derivation Δ C) (h_mem : A.and B ∈ Δ) :
+  Derivation (A ::ₘ B ::ₘ Δ.erase (A.and B)) C := by
+  match D with
+  | .TopR => exact .TopR
+  | .Id (p := p) h =>
+    rw[←cons_erase h_mem, mem_cons] at h
+    have : atom p ∈ Δ.erase (A.and B) := by
+      rcases h with h₁ | h₂
+      · nomatch h₁
+      · exact h₂
+    have : atom p ∈ A ::ₘ B ::ₘ Δ.erase (A.and B) := mem_cons_of_mem (mem_cons_of_mem this)
+    exact .Id this
+  | .BotL φ h =>
+    rw[←cons_erase h_mem, mem_cons] at h
+    have : bot ∈ Δ.erase (A.and B) := by
+      rcases h with h₁ | h₂
+      · nomatch h₁
+      · exact h₂
+    have : bot ∈ A ::ₘ B ::ₘ Δ.erase (A.and B) := mem_cons_of_mem (mem_cons_of_mem this)
+    exact .BotL φ this
+  | .AndR fst snd =>
+    exact AndR (AndL_inv_mem fst h_mem) (AndL_inv_mem snd h_mem)
+  | .OrR₀ D' =>
+    exact OrR₀ (AndL_inv_mem D' h_mem)
+  | .OrR₁ D' =>
+    exact OrR₁ (AndL_inv_mem D' h_mem)
+  | .ImpR (A := A') D' =>
+    have : A.and B ∈ A' ::ₘ Δ := mem_cons_of_mem h_mem
+    have := AndL_inv_mem D' this
+    rw[erase_cons_tail_of_mem h_mem, cons_swap_triple] at this
+    apply ImpR this
+  | .AndL (Γ := Γ') (A := A') (B := B') D' =>
+    rw[mem_cons] at h_mem
+    if h : A.and B = A'.and B' then
+      rw[←and_eq] at h
+      rw[h.1, h.2, erase_cons_head]
+      exact D'
+    else
+      replace h_mem := Or.resolve_left h_mem h
+      rw[cons_erase_swap (Ne.symm h)]
+      --
+      have : A.and B ∈ A' ::ₘ B' ::ₘ Γ' := mem_cons_of_mem (mem_cons_of_mem h_mem)
+      have D'' := AndL_inv_mem D' this
+      rw[erase_cons_tail_of_mem_double h_mem] at D''
+      --
+      apply AndL
+      rw[cons_swap_forth]; exact D''
+  | .OrL (Γ := Γ') (A := A') (B := B') fst snd =>
+    rw[mem_cons] at h_mem
+    if h : A.and B = A'.or B' then
+      nomatch h
+    else
+      replace h_mem := Or.resolve_left h_mem h
+      rw[cons_erase_swap (Ne.symm h)]
+      --
+      have : A.and B ∈ A' ::ₘ Γ' := mem_cons_of_mem h_mem
+      have fst' := AndL_inv_mem fst this
+      rw[erase_cons_tail_of_mem h_mem] at fst'
+      --
+      have : A.and B ∈ B' ::ₘ Γ' := mem_cons_of_mem h_mem
+      have snd' := AndL_inv_mem snd this
+      rw[erase_cons_tail_of_mem h_mem] at snd'
+      --
+      apply OrL
+      · rw[←cons_swap_triple]; exact fst'
+      · rw[←cons_swap_triple]; exact snd'
+  | .ImpL (Γ := Γ') (A := A') (B := B') fst snd =>
+    rw[mem_cons] at h_mem
+    if h : A.and B = A'.imp B' then
+      nomatch h
+    else
+      replace h_mem := Or.resolve_left h_mem h
+      rw[cons_erase_swap (Ne.symm h)]
+      --
+      have : A.and B ∈ A'.imp B' ::ₘ Γ' := mem_cons_of_mem h_mem
+      have fst' := AndL_inv_mem fst this
+      rw[erase_cons_tail_of_mem h_mem] at fst'
+      --
+      have : A.and B ∈ A'.imp B' ::ₘ B' ::ₘ Γ' := mem_cons_of_mem (mem_cons_of_mem h_mem)
+      have snd' := AndL_inv_mem snd this
+      rw[erase_cons_tail_of_mem_double h_mem] at snd'
+      --
+      apply ImpL
+      · rw[←cons_swap_triple]; exact fst'
+      · rw[←cons_swap_forth]; exact snd'
+
+def AndL_inv {Γ C A B} (D : Derivation (A.and B ::ₘ Γ) C) :
+  Derivation (A ::ₘ B ::ₘ Γ) C := by
+  have h_mem := mem_cons_self (A.and B) Γ
+  rw[←erase_cons_head (a := A.and B) (s := Γ)]
+  exact AndL_inv_mem D h_mem
+
+def OrL_inv_mem {Δ A B C} (D : Derivation Δ C) (h_mem : A.or B ∈ Δ) :
+  Derivation (A ::ₘ Δ.erase (A.or B)) C × Derivation (B ::ₘ Δ.erase (A.or B)) C := by
+  match D with
+  | .TopR => exact (.TopR, .TopR)
+  | .Id (p := p) h =>
+    rw[←cons_erase h_mem, mem_cons] at h
+    have : atom p ∈ Δ.erase (A.or B) := by
+      rcases h with h₁ | h₂
+      · nomatch h₁
+      · exact h₂
+    have hA : atom p ∈ A ::ₘ Δ.erase (A.or B) := mem_cons_of_mem this
+    have hB : atom p ∈ B ::ₘ Δ.erase (A.or B) := mem_cons_of_mem this
+    exact (.Id hA, .Id hB)
+  | .BotL φ h =>
+    rw[←cons_erase h_mem, mem_cons] at h
+    have : bot ∈ Δ.erase (A.or B) := by
+      rcases h with h₁ | h₂
+      · nomatch h₁
+      · exact h₂
+    have hA : bot ∈ A ::ₘ Δ.erase (A.or B) := mem_cons_of_mem this
+    have hB : bot ∈ B ::ₘ Δ.erase (A.or B) := mem_cons_of_mem this
+    exact (.BotL φ hA, .BotL φ hB)
+  | .AndR fst snd =>
+    have ⟨fstA, fstB⟩ := OrL_inv_mem fst h_mem
+    have ⟨sndA, sndB⟩ := OrL_inv_mem snd h_mem
+    exact (.AndR fstA sndA, .AndR fstB sndB)
+  | .OrR₀ D' =>
+    have ⟨D'A, D'B⟩ := OrL_inv_mem D' h_mem
+    exact (.OrR₀ D'A, .OrR₀ D'B)
+  | .OrR₁ D' =>
+    have ⟨D'A, D'B⟩ := OrL_inv_mem D' h_mem
+    exact (.OrR₁ D'A, .OrR₁ D'B)
+  | .ImpR (A := A') D' =>
+    have : A.or B ∈ A' ::ₘ Δ := mem_cons_of_mem h_mem
+    have ⟨D'A, D'B⟩ := OrL_inv_mem D' this
+    rw[erase_cons_tail_of_mem h_mem, cons_swap] at D'A D'B
+    exact (.ImpR D'A, .ImpR D'B)
+  | .AndL (Γ := Γ') (A := A') (B := B') D' =>
+    rw[mem_cons] at h_mem
+    if h : A.or B = A'.and B' then
+      nomatch h
+    else
+      replace h_mem := Or.resolve_left h_mem h
+      --
+      have : A.or B ∈ A' ::ₘ B' ::ₘ Γ' := mem_cons_of_mem (mem_cons_of_mem h_mem)
+      have ⟨D''A, D''B⟩ := OrL_inv_mem D' this
+      rw[erase_cons_tail_of_mem_double h_mem, ←cons_swap_triple] at D''A D''B
+      --
+      have dA : Derivation (A ::ₘ (A'.and B' ::ₘ Γ').erase (A.or B)) C := by
+        rw [erase_cons_tail Γ' (Ne.symm h), cons_swap A]
+        exact .AndL D''A
+      have dB : Derivation (B ::ₘ (A'.and B' ::ₘ Γ').erase (A.or B)) C := by
+        rw [erase_cons_tail Γ' (Ne.symm h), cons_swap B]
+        exact .AndL D''B
+      exact (dA, dB)
+  | .OrL (Γ := Γ') (A := A') (B := B') fst snd =>
+    rw[mem_cons] at h_mem
+    if h : A.or B = A'.or B' then
+      rw[←or_eq] at h
+      rw[h.1, h.2, erase_cons_head]
+      exact (fst, snd)
+    else
+      replace h_mem := Or.resolve_left h_mem h
+      --
+      have : A.or B ∈ A' ::ₘ Γ' := mem_cons_of_mem h_mem
+      have ⟨fstA, fstB⟩ := OrL_inv_mem fst this
+      rw[erase_cons_tail_of_mem h_mem, cons_swap] at fstA fstB
+      --
+      have : A.or B ∈ B' ::ₘ Γ' := mem_cons_of_mem h_mem
+      have ⟨sndA, sndB⟩ := OrL_inv_mem snd this
+      rw[erase_cons_tail_of_mem h_mem, cons_swap] at sndA sndB
+      --
+      have dA : Derivation (A ::ₘ (A'.or B' ::ₘ Γ').erase (A.or B)) C := by
+        rw [erase_cons_tail Γ' (Ne.symm h), cons_swap A]
+        exact .OrL fstA sndA
+      have dB : Derivation (B ::ₘ (A'.or B' ::ₘ Γ').erase (A.or B)) C := by
+        rw [erase_cons_tail Γ' (Ne.symm h), cons_swap B]
+        exact .OrL fstB sndB
+      exact (dA, dB)
+  | .ImpL (Γ := Γ') (A := A') (B := B') fst snd =>
+    rw[mem_cons] at h_mem
+    if h : A.or B = A'.imp B' then
+      nomatch h
+    else
+      replace h_mem := Or.resolve_left h_mem h
+      --
+      have : A.or B ∈ A'.imp B' ::ₘ Γ' := mem_cons_of_mem h_mem
+      have ⟨fstA, fstB⟩ := OrL_inv_mem fst this
+      rw[erase_cons_tail_of_mem h_mem, cons_swap] at fstA fstB
+      --
+      have : A.or B ∈ A'.imp B' ::ₘ B' ::ₘ Γ' := mem_cons_of_mem (mem_cons_of_mem h_mem)
+      have ⟨sndA, sndB⟩ := OrL_inv_mem snd this
+      rw[erase_cons_tail_of_mem_double h_mem, ←cons_swap_triple] at sndA sndB
+      --
+      have dA : Derivation (A ::ₘ (A'.imp B' ::ₘ Γ').erase (A.or B)) C := by
+        rw [erase_cons_tail Γ' (Ne.symm h), cons_swap A]
+        exact .ImpL fstA sndA
+      have dB : Derivation (B ::ₘ (A'.imp B' ::ₘ Γ').erase (A.or B)) C := by
+        rw [erase_cons_tail Γ' (Ne.symm h), cons_swap B]
+        exact .ImpL fstB sndB
+      exact (dA, dB)
+
+def OrL_inv {Γ C A B} (D : Derivation (A.or B ::ₘ Γ) C) :
+  Derivation (A ::ₘ Γ) C × Derivation (B ::ₘ Γ) C := by
+  have h_mem := mem_cons_self (A.or B) Γ
+  have ⟨DA, DB⟩ := OrL_inv_mem D h_mem
+  rw[erase_cons_head (a := A.or B) (s := Γ)] at DA DB
+  exact (DA, DB)
+
+def Contraction_mem {Γ A B} (h : A ∈ (Γ.erase A)) (D : Derivation Γ B) :
+  Derivation (Γ.erase A) B := by
+  match D with
+  | .Id (p := p) h' =>
+    if h_eq : atom p = A then
+      rw[←h_eq] at h ⊢
+      exact Id h
+    else
+      rw[←mem_erase_of_ne h_eq] at h'
+      exact Id h'
+  | .BotL _ h' =>
+    if h_eq : bot = A then
+      rw[←h_eq] at h ⊢
+      exact BotL _ h
+    else
+      rw[←mem_erase_of_ne h_eq] at h'
+      exact BotL _ h'
+  | .TopR => exact TopR
+  | .AndR fst snd =>
+    exact AndR (Contraction_mem h fst) (Contraction_mem h snd)
+  | .OrR₀ D' =>
+    exact OrR₀ (Contraction_mem h D')
+  | .OrR₁ D' =>
+    exact OrR₁ (Contraction_mem h D')
+  | .ImpR (A := A') (B := B') D' =>
+    have h_mem : A ∈ Γ := mem_of_mem_erase h
+    apply ImpR
+    rw [←erase_cons_tail_of_mem h_mem]
+    have h_D' : A ∈ (A' ::ₘ Γ).erase A := by
+      rw [erase_cons_tail_of_mem h_mem]
+      exact mem_cons_of_mem h
+    exact Contraction_mem h_D' D'
+  | .AndL (Γ := Γ') (A := A') (B := B') D' =>
+    if h_eq : A = A'.and B' then
+      subst h_eq
+      rw [erase_cons_head] at h ⊢
+      have h_mem : A'.and B' ∈ A' ::ₘ B' ::ₘ Γ' := mem_cons_of_mem (mem_cons_of_mem h)
+      have D_inv := AndL_inv_mem D' h_mem
+      rw [erase_cons_tail_of_mem_double h] at D_inv
+      rw [cons_swap B' A'] at D_inv
+      have h_A' : A' ∈ (A' ::ₘ A' ::ₘ B' ::ₘ B' ::ₘ Γ'.erase (A'.and B')).erase A' := by
+        rw [erase_cons_head]
+        exact mem_cons_self A' _
+      have D'₁ := Contraction_mem h_A' D_inv
+      rw [erase_cons_head] at D'₁
+      rw [←cons_swap_triple] at D'₁
+      have h_B' : B' ∈ (B' ::ₘ B' ::ₘ A' ::ₘ Γ'.erase (A'.and B')).erase B' := by
+        rw [erase_cons_head]
+        exact mem_cons_self B' _
+      have D'₂ := Contraction_mem h_B' D'₁
+      rw [erase_cons_head, cons_swap B' A'] at D'₂
+      have res := AndL D'₂
+      rw [cons_erase h] at res
+      exact res
+    else
+      rw [erase_cons_tail Γ' (Ne.symm h_eq)] at h ⊢
+      rw [mem_cons] at h
+      replace h := Or.resolve_left h h_eq
+      have h_mem_Γ' : A ∈ Γ' := mem_of_mem_erase h
+      have h_D' : A ∈ (A' ::ₘ B' ::ₘ Γ').erase A := by
+        rw [erase_cons_tail_of_mem_double h_mem_Γ']
+        exact mem_cons_of_mem (mem_cons_of_mem h)
+      have D'' := Contraction_mem h_D' D'
+      rw [erase_cons_tail_of_mem_double h_mem_Γ'] at D''
+      exact .AndL D''
+  | .OrL (Γ := Γ') (A := A') (B := B') fst snd =>
+    if h_eq : A = A'.or B' then
+      subst h_eq
+      rw [erase_cons_head] at h ⊢
+      have h_mem_fst : A'.or B' ∈ A' ::ₘ Γ' := mem_cons_of_mem h
+      have ⟨fstA, _⟩ := OrL_inv_mem fst h_mem_fst
+      rw [erase_cons_tail_of_mem h] at fstA
+      have h_A' : A' ∈ (A' ::ₘ A' ::ₘ Γ'.erase (A'.or B')).erase A' := by
+        rw [erase_cons_head]
+        exact mem_cons_self A' _
+      have D_A := Contraction_mem h_A' fstA
+      rw [erase_cons_head] at D_A
+      have h_mem_snd : A'.or B' ∈ B' ::ₘ Γ' := mem_cons_of_mem h
+      have ⟨_, sndB⟩ := OrL_inv_mem snd h_mem_snd
+      rw [erase_cons_tail_of_mem h] at sndB
+      have h_B' : B' ∈ (B' ::ₘ B' ::ₘ Γ'.erase (A'.or B')).erase B' := by
+        rw [erase_cons_head]
+        exact mem_cons_self B' _
+      have D_B := Contraction_mem h_B' sndB
+      rw [erase_cons_head] at D_B
+      have res := OrL D_A D_B
+      rw [cons_erase h] at res
+      exact res
+    else
+      rw [erase_cons_tail Γ' (Ne.symm h_eq)] at h ⊢
+      rw [mem_cons] at h
+      replace h := Or.resolve_left h h_eq
+      have h_mem_Γ' : A ∈ Γ' := mem_of_mem_erase h
+      have h_fst : A ∈ (A' ::ₘ Γ').erase A := by
+        rw [erase_cons_tail_of_mem h_mem_Γ']
+        exact mem_cons_of_mem h
+      have fst' := Contraction_mem h_fst fst
+      rw [erase_cons_tail_of_mem h_mem_Γ'] at fst'
+      have h_snd : A ∈ (B' ::ₘ Γ').erase A := by
+        rw [erase_cons_tail_of_mem h_mem_Γ']
+        exact mem_cons_of_mem h
+      have snd' := Contraction_mem h_snd snd
+      rw [erase_cons_tail_of_mem h_mem_Γ'] at snd'
+      exact .OrL fst' snd'
+  | .ImpL (Γ := Γ') (A := A') (B := B') fst snd =>
+    if h_eq : A = A'.imp B' then
+      subst h_eq
+      rw [erase_cons_head] at h ⊢
+      have h_fst : A'.imp B' ∈ (A'.imp B' ::ₘ Γ').erase (A'.imp B') := by
+        rw [erase_cons_head]
+        exact h
+      have fst' := Contraction_mem h_fst fst
+      rw [erase_cons_head] at fst'
+      have h_snd : A'.imp B' ∈ (A'.imp B' ::ₘ B' ::ₘ Γ').erase (A'.imp B') := by
+        rw [erase_cons_head]
+        exact mem_cons_of_mem h
+      have snd' := Contraction_mem h_snd snd
+      rw [erase_cons_head] at snd'
+      rw [←cons_erase h] at fst' snd' ⊢
+      rw [cons_swap B' (A'.imp B')] at snd'
+      exact .ImpL fst' snd'
+    else
+      rw [erase_cons_tail Γ' (Ne.symm h_eq)] at h ⊢
+      rw [mem_cons] at h
+      replace h := Or.resolve_left h h_eq
+      have h_mem_Γ' : A ∈ Γ' := mem_of_mem_erase h
+      have h_fst : A ∈ (A'.imp B' ::ₘ Γ').erase A := by
+        rw [erase_cons_tail_of_mem h_mem_Γ']
+        exact mem_cons_of_mem h
+      have fst' := Contraction_mem h_fst fst
+      rw [erase_cons_tail_of_mem h_mem_Γ'] at fst'
+      have h_snd : A ∈ (A'.imp B' ::ₘ B' ::ₘ Γ').erase A := by
+        rw [erase_cons_tail_of_mem_double h_mem_Γ']
+        exact mem_cons_of_mem (mem_cons_of_mem h)
+      have snd' := Contraction_mem h_snd snd
+      rw [erase_cons_tail_of_mem_double h_mem_Γ'] at snd'
+      exact .ImpL fst' snd'
+
+def Contraction (D : Derivation (A ::ₘ A ::ₘ Γ) B) : Derivation  (A ::ₘ Γ) B := by
+  have := mem_cons_self A Γ
+  have use := mem_cons_self A Γ
+  rw[←cons_erase use, ←erase_cons_tail_of_mem use] at this ⊢
+  exact Contraction_mem this D
+
+@[simp]
+lemma height_AndR_inv_fst : height (AndR_inv D).1 ≤ height D := by sorry
+@[simp]
+lemma height_AndR_inv_snd : height (AndR_inv D).2 ≤ height D := by sorry
+@[simp]
+lemma height_ImpR_inv : height (ImpR_inv D) ≤ height D := by sorry
+-- AndL_inv の実装はまだ sorry だが、「高さが増えない」という仕様だけは確定させておく
+@[simp]
+lemma height_AndL_inv (D : Derivation ((and A B) ::ₘ Γ) C) : height (AndL_inv D) ≤ height D := by
+  sorry
+@[simp]
+lemma height_OrL_inv_fst : height (OrL_inv D).1 ≤ height D := by sorry
+@[simp]
+lemma height_OrL_inv_snd : height (OrL_inv D).2 ≤ height D := by sorry
+
+@[simp]
+lemma height_ndrec {Γ1 Γ2 : Multiset Formula} {φ : Formula}
+  (h : Γ1 = Γ2) (d : Derivation Γ1 φ) :
+  height (h ▸ d) = height d := by subst h; rfl
+
+@[simp]
+lemma height_cast_Γ {Γ1 Γ2 : Multiset Formula} {φ : Formula}
+  (h : Γ1 = Γ2) (d : Derivation Γ1 φ) :
+  height (cast (congrArg (fun _a => Derivation _a φ) h) d) = height d := by
+  subst h; rfl
+
+set_option maxHeartbeats 1000000 in
+def Cut (φ : Formula)
+  (fst : Derivation Γ φ)
+  (snd : Derivation (φ ::ₘ Γ) ψ) :
+  Derivation Γ ψ := by
+  generalize snd_ctx : (φ ::ₘ Γ) = Δ at snd
+  match h_fst : fst, h_snd : snd with
+  -- axiom cases
+  | .Id (p := p) h, snd =>
+    rw[← snd_ctx] at snd
+    rw[←erase_cons_head (atom p) Γ, erase_cons_tail_of_mem h] at snd ⊢
+    exact Contraction snd
+  | fst, .Id (p := p) h =>
+    rw[←snd_ctx, mem_cons] at h
+    if h_eq : atom p = φ then
+      rw[h_eq]
+      exact fst
+    else
+      exact Id
+  | .BotL A h, snd =>
+    exact BotL ψ h
+  | fst, .TopR =>
+    exact TopR
+  | .OrR₀ L, .BotL A h =>
+    rename_i hψ hφ
+    rw[←snd_ctx, mem_cons] at h
+    if h_eq : bot = φ then
+      rw[hφ] at h_eq
+      nomatch h_eq
+    else
+      rw[hφ] at h_eq
+      replace h := Or.resolve_left h h_eq
+      exact BotL A h
+  | .OrR₁ L, .BotL A h =>
+    rename_i hψ hφ
+    rw[←snd_ctx, mem_cons] at h
+    if h_eq : bot = φ then
+      rw[hφ] at h_eq
+      nomatch h_eq
+    else
+      rw[hφ] at h_eq
+      replace h := Or.resolve_left h h_eq
+      exact BotL A h
+  | .ImpR L, .BotL A h =>
+    rename_i hψ hφ
+    rw[←snd_ctx, mem_cons] at h
+    if h_eq : bot = φ then
+      rw[hφ] at h_eq
+      nomatch h_eq
+    else
+      rw[hφ] at h_eq
+      replace h := Or.resolve_left h h_eq
+      exact BotL A h
+  | .AndR L₀ L₁, .BotL A h =>
+    rename_i hψ hφ
+    rw[←snd_ctx, mem_cons] at h
+    if h_eq : bot = φ then
+      rw[hφ] at h_eq
+      nomatch h_eq
+    else
+      rw[hφ] at h_eq
+      replace h := Or.resolve_left h h_eq
+      exact BotL A h
+  | .TopR, .BotL A h =>
+    rename_i hψ hφ
+    rw[←snd_ctx, mem_cons] at h
+    if h_eq : bot = φ then
+      rw[hφ] at h_eq
+      nomatch h_eq
+    else
+      rw[hφ] at h_eq
+      replace h := Or.resolve_left h h_eq
+      exact BotL A h
+  -- right commutative cases with TopR
+  | .TopR, .AndL (Γ := Γ') (A := A') (B := B') R =>
+    rename_i hΓ _ _ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : top = A'.and B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.and B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.and B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = top ::ₘ Γ'' := h₁
+      rw[hΓ, hφ] at fst
+      rw[h₀] at fst ⊢
+      let fst' := AndL_inv fst
+      rw[h₁, cons_swap_triple] at R
+      -- have h_fst_inv : height fst' ≤ height fst := height_AndL_inv
+      -- have h_R_dec : height R < height (.AndL R) := by simp[height]
+      -- have h_snd_eq : height snd = height (.AndL R) := by sorry
+      -- have h_term : height fst' + height R < height fst + height snd := by omega
+      have cut := Cut top fst' R
+      exact AndL cut
+  | .TopR, .OrL (Γ := Γ') (A := A') (B := B') R₀ R₁ =>
+    rename_i hΓ _ _ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : top = A'.or B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.or B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.or B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = top ::ₘ Γ'' := h₁
+      rw[hΓ, hφ] at fst
+      rw[h₀] at fst ⊢
+      have ⟨fst', fst''⟩ := OrL_inv fst
+      rw[h₁, cons_swap] at R₁ R₀
+      have cut₀ := Cut top fst' R₀
+      have cut₁ := Cut top fst'' R₁
+      exact OrL cut₀ cut₁
+  | .TopR, .ImpL (Γ := Γ') (A := A') (B := B') R₀ R₁ =>
+    rename_i hΓ _ _ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : top = A'.imp B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.imp B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.imp B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = top ::ₘ Γ'' := h₁
+      rw[hΓ, hφ] at fst
+      rw[h₀] at fst ⊢
+      have fst' : Derivation (B' ::ₘ A'.imp B' ::ₘ Γ'') top := Weakening fst
+      rw[cons_swap] at fst'
+      rw[h₁] at R₁ R₀
+      rw[cons_swap] at R₀
+      rw[cons_swap_triple] at R₁
+      have cut₀ := Cut top fst R₀
+      have cut₁ := Cut top fst' R₁
+      exact ImpL cut₀ cut₁
+  -- left commutative cases
+  | .AndL L, snd =>
+    rw[←snd_ctx, cons_swap] at snd
+    have snd' := AndL_inv snd
+    rw[cons_swap_triple] at snd'
+    have cut := Cut φ L snd'
+    exact .AndL cut
+  | .OrL L₀ L₁, snd =>
+    rw[←snd_ctx, cons_swap] at snd
+    have ⟨snd₀, snd₁⟩ := OrL_inv snd
+    rw[cons_swap] at snd₀ snd₁
+    have cut₀ := Cut φ L₀ snd₀
+    have cut₁ := Cut φ L₁ snd₁
+    exact .OrL cut₀ cut₁
+  | .ImpL (Γ := Γ) (A := A) (B := B) L₀ L₁, snd =>
+    rw[←snd_ctx] at snd
+    have snd' : Derivation (B ::ₘ φ ::ₘ A.imp B ::ₘ Γ) ψ := Weakening snd
+    rw[←cons_swap_triple] at snd'
+    have cut := Cut φ L₁ snd'
+    exact ImpL L₀ cut
+  -- harmony-cases
+  | AndR (Γ := Γ) (A := A) (B := B) L₀ L₁, .AndL (Γ := Γ') (A := A') (B := B') R =>
+    rename_i _ hΔ hψ _
+    rw[cons_eq_cons] at snd_ctx
+    if h_eq : A.and B = A'.and B' ∧ Γ = Γ' then
+      rw[←and_eq] at h_eq
+      rw[←h_eq.1.1, ←h_eq.1.2, ←h_eq.2] at R
+      have L₀' : Derivation (B ::ₘ Γ) A := Weakening L₀
+      have cut := Cut A L₀' R
+      exact Cut B L₁ cut
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h_eq
+      let Γ'' := Γ.erase (A'.and B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.and B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = A.and B ::ₘ Γ'' := h₁
+      rw[hΔ, hψ] at snd
+      rw[h₁, cons_swap] at snd
+      have snd' := AndL_inv snd
+      have L₀' : Derivation (B ::ₘ Γ) A := Weakening L₀
+      rw[h₀] at L₀' L₁ ⊢
+      have cut₀ := Cut A L₀' snd'
+      exact Cut B L₁ cut₀
+  | .OrR₀ (Γ := Γ) (A := A) (B := B) L, .OrL (Γ := Γ') (A := A') (B := B') R₀ R₁ =>
+    rename_i _ hΔ hψ _
+    rw[cons_eq_cons] at snd_ctx
+    if h_eq : A.or B = A'.or B' ∧ Γ = Γ' then
+      rw[←or_eq] at h_eq
+      rw[←h_eq.1.1, ←h_eq.2] at R₀
+      exact Cut A L R₀
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h_eq
+      let Γ'' := Γ.erase (A'.or B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.or B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = A.or B ::ₘ Γ'' := h₁
+      rw[hΔ, hψ] at snd
+      rw[h₁, cons_swap] at snd
+      have ⟨snd', _⟩ := OrL_inv snd
+      rw[h₀] at L ⊢
+      exact Cut A L snd'
+  | .OrR₁ (Γ := Γ) (A := A) (B := B) L, .OrL (Γ := Γ') (A := A') (B := B') R₀ R₁ =>
+    rename_i _ hΔ hψ _
+    rw[cons_eq_cons] at snd_ctx
+    if h_eq : A.or B = A'.or B' ∧ Γ = Γ' then
+      rw[←or_eq] at h_eq
+      rw[←h_eq.1.2, ←h_eq.2] at R₁
+      exact Cut B L R₁
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h_eq
+      let Γ'' := Γ.erase (A'.or B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.or B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = A.or B ::ₘ Γ'' := h₁
+      rw[hΔ, hψ] at snd
+      rw[h₁, cons_swap] at snd
+      have ⟨_, snd''⟩ := OrL_inv snd
+      rw[h₀] at L ⊢
+      exact Cut B L snd''
+  | .ImpR (Γ := Γ) (A := A) (B := B) L, .ImpL (Γ := Γ') (A := A') (B := B') R₀ R₁ =>
+    rename_i hΓ hΔ hψ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h_eq : A.imp B = A'.imp B' ∧ Γ = Γ' then
+      rw[←imp_eq] at h_eq
+      rw[←h_eq.1.1, ←h_eq.1.2, ←h_eq.2] at R₀ R₁
+      rw[hΓ, hφ] at fst
+      have fst' : Derivation (B ::ₘ Γ) (A.imp B) := Weakening fst
+      have cut₀ := Cut (A.imp B) fst R₀
+      have cut₁ := Cut A cut₀ L
+      have cut₂ := Cut (A.imp B) fst' R₁
+      exact Cut B cut₁ cut₂
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h_eq
+      let Γ'' := Γ.erase (A'.imp B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.imp B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = A.imp B ::ₘ Γ'' := h₁
+      rw[hΔ, hψ] at snd
+      rw[h₁, cons_swap_triple] at R₁
+      rw[h₁, cons_swap] at snd R₀
+      rw[hΓ, hφ] at fst
+      have fst' : Derivation (B' ::ₘ Γ) (A.imp B):= Weakening fst
+      rw[h₀] at fst fst' ⊢
+      rw[cons_swap] at fst'
+      have cut₀ := Cut (A.imp B) fst snd
+      have cut₁ := Cut (A.imp B) fst R₀
+      have cut₂ := Cut (A.imp B) fst' R₁
+      exact ImpL cut₁ cut₂
+  -- right commutative cases with Right rule
+  | fst, .AndR R₀ R₁ =>
+    rw[←snd_ctx] at R₀ R₁
+    have cut₀ := Cut φ fst R₀
+    have cut₁ := Cut φ fst R₁
+    exact .AndR cut₀ cut₁
+  | fst, .OrR₀ R =>
+    rw[←snd_ctx] at R
+    have cut := Cut φ fst R
+    exact .OrR₀ cut
+  | fst, .OrR₁ R =>
+    rw[←snd_ctx] at R
+    have cut := Cut φ fst R
+    exact .OrR₁ cut
+  | fst, .ImpR (A := A) R =>
+    rw[←snd_ctx, cons_swap] at R
+    have fst' : Derivation (A ::ₘ Γ) φ := Weakening fst
+    have cut := Cut φ fst' R
+    exact .ImpR cut
+  -- right commutative cases with Left rule
+  | .OrR₀ (A := A) (B := B) L, .AndL (Γ := Γ') (A := A') (B := B') R =>
+    rename_i hΓ hΔ hψ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : A.or B = A'.and B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.and B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.and B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' =  A.or B ::ₘ Γ'' := h₁
+      rw[hΓ, hφ] at fst
+      rw[h₀] at fst ⊢
+      have fst' := AndL_inv fst
+      rw[h₁, cons_swap_triple] at R
+      have cut := Cut (A.or B) fst' R
+      exact AndL cut
+  | .OrR₁ (A := A) (B := B) L, .AndL (Γ := Γ') (A := A') (B := B') R =>
+    rename_i hΓ hΔ hψ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : A.or B = A'.and B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.and B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.and B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' =  A.or B ::ₘ Γ'' := h₁
+      rw[hΓ, hφ] at fst
+      rw[h₀] at fst ⊢
+      have fst' := AndL_inv fst
+      rw[h₁, cons_swap_triple] at R
+      have cut := Cut (A.or B) fst' R
+      exact AndL cut
+  | .ImpR (A := A) (B := B) L, .AndL (Γ := Γ') (A := A') (B := B') R =>
+    rename_i hΓ hΔ hψ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : A.imp B = A'.and B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.and B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.and B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' =  A.imp B ::ₘ Γ'' := h₁
+      rw[hΓ, hφ] at fst
+      rw[h₀] at fst ⊢
+      have fst' := AndL_inv fst
+      rw[h₁, cons_swap_triple] at R
+      have cut := Cut (A.imp B) fst' R
+      exact AndL cut
+  | .AndR (A := A) (B := B) L₀ L₁, .OrL (Γ := Γ') (A := A') (B := B') R₀' L₁' =>
+    rename_i hΓ hΔ hψ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : A.and B = A'.or B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.or B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.or B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = A.and B ::ₘ Γ'' := h₁
+      rw[hΔ, hψ] at snd
+      rw[h₁, cons_swap] at snd
+      have snd' := AndL_inv snd
+      have L₀' : Derivation (B ::ₘ Γ) A := Weakening L₀
+      rw[h₀] at L₀' L₁ ⊢
+      have cut₀ := Cut A L₀' snd'
+      exact Cut B L₁ cut₀
+  | .ImpR (A := A) (B := B) L, .OrL (Γ := Γ') (A := A') (B := B') R₀ R₁ =>
+    rename_i hΓ hΔ hψ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : A.imp B = A'.or B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.or B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.or B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = A.imp B ::ₘ Γ'' := h₁
+      rw[hΓ, hφ] at fst
+      rw[h₀] at fst ⊢
+      have ⟨fst', fst''⟩ := OrL_inv fst
+      rw[hΔ, hψ, h₁] at snd
+      have ⟨snd', snd''⟩ := OrL_inv snd
+      rw[cons_swap] at snd' snd''
+      have cut₀ := Cut (A.imp B) fst' snd'
+      have cut₁ := Cut (A.imp B) fst'' snd''
+      exact OrL cut₀ cut₁
+  | .AndR (A := A) (B := B) L₀ L₁, .ImpL (Γ := Γ') (A := A') (B := B') R₀ R₁ =>
+    rename_i hΓ hΔ hψ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : A.and B = A'.imp B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.imp B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.imp B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = A.and B ::ₘ Γ'' := h₁
+      have L₀' : Derivation (B ::ₘ Γ) A := Weakening L₀
+      have L₀'' : Derivation (B' ::ₘ B ::ₘ Γ) A := Weakening L₀'
+      have L₁' : Derivation (B' ::ₘ Γ) B := Weakening L₁
+      rw[h₀] at L₁ L₁' L₀' L₀'' ⊢
+      rw[h₁] at R₁ R₀
+      rw[cons_swap] at R₀ L₁'
+      rw[cons_swap_triple] at R₁
+      rw[←cons_swap_triple] at L₀''
+      have R₀' := AndL_inv R₀
+      have R₁' := AndL_inv R₁
+      have cut₀ := Cut A L₀' R₀'
+      have cut₁ := Cut B L₁ cut₀
+      have cut₂ := Cut A L₀'' R₁'
+      have cut₃ := Cut B L₁' cut₂
+      exact ImpL cut₁ cut₃
+  | .OrR₀ (A := A) (B := B) L, .ImpL (Γ := Γ') (A := A') (B := B') R₀ R₁ =>
+    rename_i hΓ hΔ hψ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : A.or B = A'.imp B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.imp B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.imp B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = A.or B ::ₘ Γ'' := h₁
+      have L' : Derivation (B' ::ₘ Γ) A := Weakening L
+      rw[h₀] at L L' ⊢
+      rw[h₁] at R₁ R₀
+      rw[cons_swap] at R₀ L'
+      rw[cons_swap_triple] at R₁
+      have ⟨R₀', _⟩ := OrL_inv R₀
+      have ⟨R₁', _⟩ := OrL_inv R₁
+      have cut₀ := Cut A L R₀'
+      have cut₁ := Cut A L' R₁'
+      exact ImpL cut₀ cut₁
+  | .OrR₁ (A := A) (B := B) L, .ImpL (Γ := Γ') (A := A') (B := B') R₀ R₁ =>
+    rename_i hΓ hΔ hψ hφ
+    rw[cons_eq_cons] at snd_ctx
+    if h : A.or B = A'.imp B' ∧ Γ = Γ' then
+      nomatch h.1
+    else
+      replace snd_ctx := Or.resolve_left snd_ctx h
+      let Γ'' := Γ.erase (A'.imp B')
+      have ⟨h₀, h₁⟩ := cons_erase_eq_of_exists snd_ctx.2
+      replace h₀ : Γ = A'.imp B' ::ₘ Γ'' := h₀
+      replace h₁ : Γ' = A.or B ::ₘ Γ'' := h₁
+      have L' : Derivation (B' ::ₘ Γ) B := Weakening L
+      rw[h₀] at L L' ⊢
+      rw[h₁] at R₁ R₀
+      rw[cons_swap] at R₀ L'
+      rw[cons_swap_triple] at R₁
+      have ⟨_, R₀'⟩ := OrL_inv R₀
+      have ⟨_, R₁'⟩ := OrL_inv R₁
+      have cut₀ := Cut B L R₀'
+      have cut₁ := Cut B L' R₁'
+      exact ImpL cut₀ cut₁
+  termination_by (size φ, height fst + height snd)
+  decreasing_by
+    all_goals
+      -- simp_wf
+      try subst_vars
+      simp [Prod.lex_def]
+    · unfold Γ'' at h₀
+      generalize hX : Γ.erase (A'.and B') = X at *
+      subst_vars
+      simp[AndL_inv]
+      have : height R < height snd := by sorry
+      omega
+    sorry
+
+
+theorem Cut_adm : Γ ⊢ A → (A ::ₘ Γ) ⊢ B → Γ ⊢ B := by
+  intro ⟨h₀P⟩ ⟨h₁P⟩
+  have P : Derivation Γ B := by
+    apply Cut A h₀P h₁P
+  use P
+
+end Derivation
+
+end Admissible
+
+section test
+
+open Derivation
+
+def P : Derivation [atom "p", atom "q"] (and (atom "p") (atom "q")) := by
+  apply AndR
+  · exact Id
+  · exact Id
+
+#eval height P
+#eval height (Weakening P)
+-- 3
+
+example : [A, B] ⊢ A.and B := by
+  have P : Derivation [A, B] (A.and B) := by
+    apply AndR
+    · apply Identity A
+    · apply Identity B
+  use P
+
+example : Γ ⊢ A.and B → Γ ⊢ A ∧ Γ ⊢ B := by
+  intro ⟨hP⟩
+  have PA : Derivation Γ A := by
+    apply Cut (A.and B)
+    · trivial
+    · apply AndL
+      apply Identity A
+  have PB : Derivation Γ B := by
+    apply Cut (A.and B)
+    · trivial
+    · apply AndL
+      apply Identity B
+  constructor
+  · use PA
+  · use PB
+
+end test

@@ -1,7 +1,10 @@
 import Mathlib.Data.Multiset.Basic
+import Mathlib.Data.Multiset.ZeroCons
+import Mathlib.Data.Multiset.AddSub
 import MathProject.ProofTheory.Propositional.formula
 
 open Formula
+open Multiset
 
 /-- LJT / G4ip by Roy Dyckhoff 1992 -/
 inductive Derivation : Multiset (Formula) → Formula -> Type where
@@ -17,9 +20,10 @@ inductive Derivation : Multiset (Formula) → Formula -> Type where
 --   Derivation (top ::ₘ Γ) A
 -- | AndL₀ :  Derivation (A₀ ::ₘ Γ) Δ → Derivation (and A₀ A₁ ::ₘ Γ) C
 -- | AndL₁ :  Derivation (A₁ ::ₘ Γ) Δ → Derivation (and A₀ A₁ ::ₘ Γ) C
-| AndL :
+| AndL {Γ : Multiset Formula} :
   Derivation (A₀ ::ₘ A₁ ::ₘ Γ) Δ →
-  Derivation (and A₀ A₁ ::ₘ Γ) C
+  -- (h : A ∈ Γ ∧  B ∈ Γ := by aesop) →
+  Derivation (and A B ::ₘ ((Γ.erase A).erase B)) C
 | AndR :
   (fst : Derivation Γ A) →
   (snd : Derivation Γ B) →
