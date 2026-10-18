@@ -51,3 +51,7 @@ end Formula
 
 local notation "⊤"   => Formula.top
 local notation "⊥"   => Formula.bot
+
+open Formula
+example : 0 = top.size := by simp
+example {φ : Formula} : φ.size = φ.size := by simp
