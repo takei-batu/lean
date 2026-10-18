@@ -193,9 +193,6 @@ def without_depth : Derivation' n Γ A → Derivation Γ A
 
 end Convert
 
--- open G3ip
--- open Derivation'
--- open Formula
 open Multiset
 open LinearOrder
 
@@ -243,32 +240,6 @@ theorem cons_erase_eq_of_exists {Γ Γ' : Multiset Formula} {φ ψ : Formula}
     rw [h_cs]
     exact hcs₁
   exact ⟨h₀, h₁⟩
-
-  -- match D with
-  -- | .Id h => sorry
-  -- | .BotL C h => sorry
-  -- | .TopR => sorry
-  -- | .AndR fst snd => sorry
-  -- | .OrR₀ D' => sorry
-  -- | .OrR₁ D' => sorry
-  -- | .ImpR (Γ := Γ') (A := A') (B := B') D' => sorry
-  -- | .AndL (Γ := Γ') (A := A') (B := B') D' => sorry
-  -- | .OrL (Γ := Γ') (A := A') (B := B') fst snd => sorry
-  -- | .ImpL (Γ := Γ') (A := A') (B := B') fst snd => sorry
-
-  --   match φ with
-  -- | .atom p => sorry
-  -- | .bot => sorry
-  -- | .top => sorry
-  -- | .imp A B => sorry
-  -- | .and A B => sorry
-  -- | .or A B => sorry
-
-  -- induction n with
-  -- | zero =>
-  --   sorry
-  -- | succ n ih =>
-  --   sorry
 
 section Admissible
 
