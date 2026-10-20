@@ -224,23 +224,6 @@ theorem for_commutative {φ A : Formula} (ctx : φ ::ₘ Γ = A ::ₘ Γ') (h_ne
   · rw [←cons_erase this, cons_swap, cons_inj_right] at ctx
     exact ctx.symm
 
-theorem cons_erase_eq_of_exists {Γ Γ' : Multiset Formula} {φ ψ : Formula}
-  (h : ∃ cs, Γ = φ ::ₘ cs ∧ Γ' = ψ ::ₘ cs) :
-  Γ = φ ::ₘ Γ.erase φ ∧ Γ' = ψ ::ₘ Γ.erase φ := by
-  obtain ⟨cs, hcs₀, hcs₁⟩ := h
-  -- 1つ目の等式の証明
-  have h_mem : φ ∈ Γ := by
-    rw [hcs₀]
-    simp only[mem_cons_self]
-  have h₀ : Γ = φ ::ₘ Γ.erase φ := (Multiset.cons_erase h_mem).symm
-  -- 2つ目の等式の証明
-  have h₁ : Γ' = ψ ::ₘ Γ.erase φ := by
-    have h_cs : Γ.erase φ = cs := by
-      rw [hcs₀, erase_cons_head]
-    rw [h_cs]
-    exact hcs₁
-  exact ⟨h₀, h₁⟩
-
 section Admissible
 
 namespace Derivation'
