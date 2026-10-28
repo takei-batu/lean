@@ -506,6 +506,8 @@ def Contraction :
 
 set_option maxHeartbeats 1000000 in
 -- Relaxed maxHeartbeats to verify massive pattern matching and termination proofs.
+-- set_option trace.profiler true in
+-- set_option diagnostics true in
 def Cut (D₁ : Derivation' n₁ Γ φ) (D₂ : Derivation' n₂ (φ ::ₘ Γ) ψ) :
   Σ k, Derivation' k Γ ψ := by
   generalize ctx : (φ ::ₘ Γ) = Δ at D₂
@@ -777,15 +779,10 @@ def Cut (D₁ : Derivation' n₁ Γ φ) (D₂ : Derivation' n₂ (φ ::ₘ Γ) �
   termination_by (φ.size, n₁ + n₂)
   decreasing_by
   all_goals
-    simp only [Prod.lex_def]
     subst_vars
-    -- simp? [Formula.size]
-    simp only [
-      Formula.size, lt_self_iff_false, Nat.add_lt_add_iff_left,
-      Nat.add_lt_add_iff_right, Nat.lt_add_one, and_self, or_true]
-    all_goals
-      left
-      omega
+    rw [Prod.lex_def]
+    dsimp only [size]
+    omega
 
 end Derivation'
 
