@@ -1,16 +1,15 @@
 {
   "permissions": {
+		"allow": [
+            "Run(*lake env lean*)"
+		],
 		"deny": [
-			"Bash(**)",
-			"Terminal(**)",
-			"Run(**)",
-			// "Read(//**/.env*)",
 			"Read(//**/.git/**)",
 			"Read(//**/.vscode/**)",
 			"Read(//**/.lake/**)",
 			"Read(//**/.lean_game/**)",
 			"Read(//**/MathProject/**)",
-			"Read(//**/test/**)"
+      		"Read(//**/test/**)"
 		]
   },
   "customInstructions": "Follow CLAUDE.md !"

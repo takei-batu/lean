@@ -402,8 +402,6 @@ def Contraction :
     | .TopR => exact TopR
   | succ n ih =>
     intro D
-    -- apply depth_succ
-    -- apply ih
     generalize ctx : (A ::ₘ A ::ₘ Γ) = Δ at D
     match D with
     | .Id _ => exact Id
@@ -412,7 +410,6 @@ def Contraction :
     | .AndR fst snd =>
       rw[←ctx] at fst snd
       exact AndR (ih fst) (ih snd)
-      --exact AndR (Contraction_mem h fst) (Contraction_mem h snd)
     | .OrR₀ D' =>
       rw[←ctx] at D'
       exact OrR₀ (ih D')

@@ -396,113 +396,93 @@ def Contraction :
   induction n generalizing Γ A B with
   | zero =>
     intro D
-    match D with
-    | .Id _ => exact Id
-    | .BotL _ _ => exact BotL _
-    | .TopR => exact TopR
-  | succ n ih =>
+    match hΔ : A ::ₘ A ::ₘ Γ, D with
+    | _, .Id h =>
+      subst hΔ
+      exact .Id (by simp only [mem_cons] at h ⊢; tauto)
+    | _, .BotL _ h =>
+      subst hΔ
+      exact .BotL _ (by simp only [mem_cons] at h ⊢; tauto)
+    | _, .TopR => exact .TopR
+  | succ m ih =>
     intro D
-    -- apply depth_succ
-    -- apply ih
-    generalize ctx : (A ::ₘ A ::ₘ Γ) = Δ at D
-    match D with
-    | .Id _ => exact Id
-    | .BotL _ _ => exact BotL _
-    | .TopR => exact TopR
-    | .AndR fst snd =>
-      rw[←ctx] at fst snd
-      exact AndR (ih fst) (ih snd)
-      --exact AndR (Contraction_mem h fst) (Contraction_mem h snd)
-    | .OrR₀ D' =>
-      rw[←ctx] at D'
-      exact OrR₀ (ih D')
-      -- exact OrR₀ (Contraction_mem h D')
-    | .OrR₁ D' =>
-      rw[←ctx] at D'
-      exact OrR₁ (ih D')
-      -- exact OrR₁ (Contraction_mem h D')
-    | .ImpR (A := A') (B := B') D' =>
-      rw[←ctx, ←cons_swap_rotate] at D'
-      apply ImpR (ih D').Exchange
-    | .AndL (Γ := Γ') (A := A') (B := B') D' =>
-      if h_eq : A = A'.and B' then
-        subst h_eq
-        rw[cons_inj_right] at ctx
-        rw[←ctx, cons_swap_rotate] at D'
-        have DAABB := AndL_inv D'
-        rw [cons_swap B' A'] at DAABB
-        have DABB := ih DAABB
-        rw[←cons_swap_rotate] at DABB
-        have DBA := ih DABB
-        rw[cons_swap] at DBA
-        exact AndL DBA
+    match hΔ : A ::ₘ A ::ₘ Γ, D with
+    | _, .Id h =>
+      subst hΔ
+      exact .Id (by simp only [mem_cons] at h ⊢; tauto)
+    | _, .BotL _ h =>
+      subst hΔ
+      exact .BotL _ (by simp only [mem_cons] at h ⊢; tauto)
+    | _, .TopR => exact .TopR
+    | _, .AndR fst snd =>
+      subst hΔ
+      exact .AndR (ih fst) (ih snd)
+    | _, .OrR₀ D' =>
+      subst hΔ
+      exact .OrR₀ (ih D')
+    | _, .OrR₁ D' =>
+      subst hΔ
+      exact .OrR₁ (ih D')
+    | _, .ImpR (A := C) D' =>
+      subst hΔ
+      have D₁ : Derivation' m (A ::ₘ A ::ₘ C ::ₘ Γ) _ := D'.Exchange
+      have D₂ : Derivation' m (C ::ₘ A ::ₘ Γ) _ := (ih D₁).Exchange
+      exact .ImpR D₂
+    | _, .AndL (A := C) (B := E) (Γ := Γ') D' =>
+      if h : A = C.and E then
+        subst h
+        rw [cons_inj_right] at hΔ
+        subst hΔ
+        have D₁ : Derivation' m (C.and E ::ₘ C ::ₘ E ::ₘ Γ) _ := D'.Exchange
+        have D₂ : Derivation' m (C ::ₘ C ::ₘ E ::ₘ E ::ₘ Γ) _ := (AndL_inv D₁).Exchange
+        have D₃ : Derivation' m (E ::ₘ E ::ₘ C ::ₘ Γ) _ := (ih D₂).Exchange
+        have D₄ : Derivation' m (C ::ₘ E ::ₘ Γ) _ := (ih D₃).Exchange
+        exact .AndL D₄
       else
-        let Γ'' := Γ.erase (A'.and B')
-        have eq₁: Γ = A'.and B' ::ₘ Γ'' := by
-          have := mem_cons_self (A'.and B') Γ'
-          rw[←ctx, mem_cons, mem_cons, ←or_assoc, or_self] at this
-          replace := Or.resolve_left this (Ne.symm h_eq)
-          rw[cons_erase this]
-        have eq₂ : Γ' = A ::ₘ A ::ₘ Γ'' := by
-          rw[eq₁, cons_swap_rotate, cons_inj_right] at ctx
-          exact ctx.symm
-        rw[eq₁]
-        rw[eq₂, cons_swap_pair] at D'
-        have := ih D'
-        rw[←cons_swap_rotate] at this
-        have := AndL this
-        exact this.Exchange
-    | .OrL (Γ := Γ') (A := A') (B := B') fst snd =>
-      if h_eq : A = A'.or B' then
-        subst h_eq
-        rw[cons_inj_right] at ctx
-        rw[←ctx, cons_swap] at fst snd
-        have ⟨fst', _⟩ := OrL_inv fst
-        have ⟨_, snd'⟩ := OrL_inv snd
-        exact OrL (ih fst') (ih snd')
+        obtain ⟨h_mem, rfl⟩ := for_commutative hΔ h
+        have h_mem' : C.and E ∈ Γ := (men_cons_neq (Ne.symm h)).mp h_mem
+        rw [erase_cons_tail_of_mem h_mem'] at D'
+        have D₁ : Derivation' m (A ::ₘ A ::ₘ C ::ₘ E ::ₘ Γ.erase (C.and E)) _ := D'.Exchange
+        have D₂ : Derivation' m (C ::ₘ E ::ₘ A ::ₘ Γ.erase (C.and E)) _ := (ih D₁).Exchange
+        rw [← cons_erase h_mem']
+        exact (AndL D₂).Exchange
+    | _, .OrL (A := C) (B := E) (Γ := Γ') fst snd =>
+      if h : A = C.or E then
+        subst h
+        rw [cons_inj_right] at hΔ
+        subst hΔ
+        have fst₁ : Derivation' m (C.or E ::ₘ C ::ₘ Γ) _ := fst.Exchange
+        have snd₁ : Derivation' m (C.or E ::ₘ E ::ₘ Γ) _ := snd.Exchange
+        exact .OrL (ih (OrL_inv fst₁).1) (ih (OrL_inv snd₁).2)
       else
-        let Γ'' := Γ.erase (A'.or B')
-        have eq₁: Γ = A'.or B' ::ₘ Γ'' := by
-          have := mem_cons_self (A'.or B') Γ'
-          rw[←ctx, mem_cons, mem_cons, ←or_assoc, or_self] at this
-          replace := Or.resolve_left this (Ne.symm h_eq)
-          rw[cons_erase this]
-        have eq₂ : Γ' = A ::ₘ A ::ₘ Γ'' := by
-          rw[eq₁, cons_swap_rotate, cons_inj_right] at ctx
-          exact ctx.symm
-        rw[eq₁]
-        rw[eq₂, ←cons_swap_rotate] at fst snd
-        have fst' := ih fst
-        have snd' := ih snd
-        rw[←cons_swap] at fst' snd'
-        have := OrL fst' snd'
-        exact this.Exchange
-    | .ImpL (Γ := Γ') (A := A') (B := B') fst snd =>
-      if h_eq : A = A'.imp B' then
-        subst h_eq
-        rw[cons_inj_right] at ctx
-        rw[←ctx, cons_swap] at fst
-        rw[←ctx, cons_swap_rotate] at snd
-        exact ImpL (ih fst) (ih snd)
+        obtain ⟨h_mem, rfl⟩ := for_commutative hΔ h
+        have h_mem' : C.or E ∈ Γ := (men_cons_neq (Ne.symm h)).mp h_mem
+        rw [erase_cons_tail_of_mem h_mem'] at fst snd
+        have fst₁ : Derivation' m (A ::ₘ A ::ₘ C ::ₘ Γ.erase (C.or E)) _ := fst.Exchange
+        have snd₁ : Derivation' m (A ::ₘ A ::ₘ E ::ₘ Γ.erase (C.or E)) _ := snd.Exchange
+        have fst₂ : Derivation' m (C ::ₘ A ::ₘ Γ.erase (C.or E)) _ := (ih fst₁).Exchange
+        have snd₂ : Derivation' m (E ::ₘ A ::ₘ Γ.erase (C.or E)) _ := (ih snd₁).Exchange
+        rw [← cons_erase h_mem']
+        exact (OrL fst₂ snd₂).Exchange
+    | _, .ImpL (A := C) (B := E) (Γ := Γ') fst snd =>
+      if h : A = C.imp E then
+        subst h
+        rw [cons_inj_right] at hΔ
+        subst hΔ
+        have snd₁ : Derivation' m (C.imp E ::ₘ C.imp E ::ₘ E ::ₘ Γ) _ := snd.Exchange
+        exact .ImpL (ih fst) (ih snd₁)
       else
-        let Γ'' := Γ.erase (A'.imp B')
-        have eq₁: Γ = A'.imp B' ::ₘ Γ'' := by
-          have := mem_cons_self (A'.imp B') Γ'
-          rw[←ctx, mem_cons, mem_cons, ←or_assoc, or_self] at this
-          replace := Or.resolve_left this (Ne.symm h_eq)
-          rw[cons_erase this]
-        have eq₂ : Γ' = A ::ₘ A ::ₘ Γ'' := by
-          rw[eq₁, cons_swap_rotate, cons_inj_right] at ctx
-          exact ctx.symm
-        rw[eq₁]
-        rw[eq₂, ←cons_swap_rotate] at fst
-        rw[eq₂, ←cons_swap_pair] at snd
-        have fst' := ih fst
-        have snd' := ih snd
-        rw[cons_swap] at fst'
-        rw[←cons_swap_rotate] at snd'
-        have := ImpL fst' snd'
-        exact this.Exchange
+        obtain ⟨h_mem, rfl⟩ := for_commutative hΔ h
+        have h_mem' : C.imp E ∈ Γ := (men_cons_neq (Ne.symm h)).mp h_mem
+        rw [erase_cons_tail_of_mem h_mem'] at fst snd
+        have fst₁ : Derivation' m (A ::ₘ A ::ₘ C.imp E ::ₘ Γ.erase (C.imp E)) _ := fst.Exchange
+        have snd₁ : Derivation' m (A ::ₘ A ::ₘ C.imp E ::ₘ E ::ₘ Γ.erase (C.imp E)) _ :=
+          snd.Exchange
+        have fst₂ : Derivation' m (C.imp E ::ₘ A ::ₘ Γ.erase (C.imp E)) _ := (ih fst₁).Exchange
+        have snd₂ : Derivation' m (C.imp E ::ₘ E ::ₘ A ::ₘ Γ.erase (C.imp E)) _ :=
+          (ih snd₁).Exchange
+        rw [← cons_erase h_mem']
+        exact (ImpL fst₂ snd₂).Exchange
 
 set_option maxHeartbeats 1000000 in
 -- Relaxed maxHeartbeats to verify massive pattern matching and termination proofs.
@@ -512,277 +492,159 @@ def Cut (D₁ : Derivation' n₁ Γ φ) (D₂ : Derivation' n₂ (φ ::ₘ Γ) �
   Σ k, Derivation' k Γ ψ := by
   generalize ctx : (φ ::ₘ Γ) = Δ at D₂
   match h₁ : D₁, h₂ : D₂ with
-  -- axiom cases for D₁
-  | .Id (p := p) h, D₂ =>
-    rw[← ctx] at D₂
-    rw[←erase_cons_head (atom p) Γ, erase_cons_tail_of_mem h] at D₂ ⊢
-    exact ⟨n₂, Contraction D₂⟩
-  | .BotL _ _, _ =>
-    exact ⟨max n₁ n₂, BotL ψ⟩
-  -- axiom cases for D₂
+  | .Id h, D₂ =>
+    subst ctx
+    rw [← cons_erase h] at D₂ ⊢
+    exact ⟨_, Contraction D₂⟩
+  | .BotL _ h, _ => exact ⟨0, BotL _ h⟩
+  | .AndL (A := A) (B := B) (Γ := Γ') D, D₂ =>
+    subst ctx
+    have D₂' : Derivation' n₂ (φ ::ₘ A ::ₘ B ::ₘ Γ') ψ :=
+      (AndL_inv (D₂.Exchange : Derivation' n₂ (A.and B ::ₘ φ ::ₘ Γ') ψ)).Exchange
+    exact ⟨_, AndL (Cut D D₂').2⟩
+  | .OrL (A := A) (B := B) (Γ := Γ') fst snd, D₂ =>
+    subst ctx
+    have D₂' := OrL_inv (D₂.Exchange : Derivation' n₂ (A.or B ::ₘ φ ::ₘ Γ') ψ)
+    have E₁ := Cut fst (D₂'.1.Exchange : Derivation' n₂ (φ ::ₘ A ::ₘ Γ') ψ)
+    have E₂ := Cut snd (D₂'.2.Exchange : Derivation' n₂ (φ ::ₘ B ::ₘ Γ') ψ)
+    exact ⟨max E₁.1 E₂.1 + 1,
+      OrL (depth_le (Nat.le_max_left _ _) E₁.2) (depth_le (Nat.le_max_right _ _) E₂.2)⟩
+  | .ImpL (n := m) (A := A) (B := B) (Γ := Γ') fst snd, D₂ =>
+    subst ctx
+    have D₂' : Derivation' n₂ (φ ::ₘ A.imp B ::ₘ B ::ₘ Γ') ψ := (Weakening (A := B) D₂).Exchange
+    have E := Cut snd D₂'
+    exact ⟨max m E.1 + 1,
+      ImpL (depth_le (Nat.le_max_left _ _) fst) (depth_le (Nat.le_max_right _ _) E.2)⟩
   | D₁, .Id (p := p) h =>
-    rw[←ctx, mem_cons] at h
-    if h_eq : atom p = φ then
-      rw[h_eq]
-      exact ⟨n₁, D₁⟩
+    subst ctx
+    if hp : φ = atom p then
+      subst hp
+      exact ⟨_, D₁⟩
     else
-      exact ⟨max n₁ n₂, Id⟩
-  | D₁, .TopR =>
-    exact ⟨max n₁ n₂, TopR⟩
-  -- D₂ = BotL
-  | .AndR L₀ L₁, .BotL A h =>
-    rw[←ctx, mem_cons] at h
-    replace h := Or.resolve_left h (by simp)
-    exact ⟨max n₁ n₂, BotL A h⟩
-  | .OrR₀ L, .BotL A h =>
-    rw[←ctx, mem_cons] at h
-    replace h := Or.resolve_left h (by simp)
-    exact ⟨max n₁ n₂, BotL A h⟩
-  | .OrR₁ L, .BotL A h =>
-    rw[←ctx, mem_cons] at h
-    replace h := Or.resolve_left h (by simp)
-    exact ⟨max n₁ n₂, BotL A h⟩
-  | .ImpR L, .BotL A h =>
-    rw[←ctx, mem_cons] at h
-    replace h := Or.resolve_left h (by simp)
-    exact ⟨max n₁ n₂, BotL A h⟩
-  -- D₁ = TopR
-  | .TopR, .BotL A h =>
-    rw[←ctx, men_cons_neq] at h
-    exact ⟨max n₁ n₂, BotL A⟩
-  | .TopR, .AndL (Γ := Γ') (A := A') (B := B') R =>
-    rename_i hΓ _ _ _ _ hφ
-    subst hΓ hφ
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw[←cons_erase h] at D₁ ⊢
-    rw[eq, cons_swap_rotate] at R
-    have ⟨k, cut⟩ := Cut (AndL_inv D₁) R
-    exact ⟨k + 1, AndL cut⟩
-  | .TopR, .OrL fst snd =>
-    rename_i hΓ _ _ _ _ hφ
-    subst hΓ hφ
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw [←cons_erase h] at D₁ ⊢
-    rw [eq, cons_swap] at fst snd
-    have ⟨k₁, cut₁⟩ := Cut ((OrL_inv D₁).1) fst
-    have ⟨k₂, cut₂⟩ := Cut ((OrL_inv D₁).2) snd
-    have cut₁' := depth_le (n := max k₁ k₂) (by omega) cut₁
-    have cut₂' := depth_le (n := max k₁ k₂) (by omega) cut₂
-    exact ⟨max k₁ k₂ + 1, OrL cut₁' cut₂'⟩
-  | .TopR, .ImpL (B := B') fst snd =>
-    rename_i hΓ _ _ _ _ hφ
-    subst hΓ hφ
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw [←cons_erase h] at D₁ ⊢
-    rw [eq, cons_swap] at fst
-    rw [eq, cons_swap_rotate] at snd
-    have ⟨k₁, cut₁⟩ := Cut D₁ fst
-    have D₁' := Weakening (A := B') D₁
-    have ⟨k₂, cut₂⟩ := Cut D₁'.Exchange snd
-    let cut₁' := depth_le (Nat.le_max_left k₁ k₂) cut₁
-    let cut₂' := depth_le (Nat.le_max_right k₁ k₂) cut₂
-    exact ⟨max k₁ k₂ + 1, ImpL cut₁' cut₂'⟩
-  -- left commutative cases
-  | .AndL L, D₂ =>
-    rw[←ctx, cons_swap] at D₂
-    have D₂' := AndL_inv D₂
-    rw[cons_swap_rotate] at D₂'
-    have ⟨k, cut⟩ := Cut L D₂'
-    exact ⟨k + 1, AndL cut⟩
-  | .OrL fst snd, D₂ =>
-    rw[←ctx, cons_swap] at D₂
-    have ⟨fst', snd'⟩ := OrL_inv D₂
-    rw[cons_swap] at fst' snd'
-    have ⟨k₁, cut₁⟩ := Cut fst fst'
-    have ⟨k₂, cut₂⟩ := Cut snd snd'
-    have cut₁' := depth_le (n := max k₁ k₂) (by omega) cut₁
-    have cut₂' := depth_le (n := max k₁ k₂) (by omega) cut₂
-    exact ⟨max k₁ k₂ + 1, OrL cut₁' cut₂'⟩
-  | .ImpL (n := n) (Γ := Γ) (A := A) (B := B) fst snd, D₂ =>
-    rw[←ctx] at D₂
-    have D₂' := Weakening (A := B) D₂
-    rw[←cons_swap_rotate] at D₂'
-    have ⟨n', cut⟩ := Cut snd D₂'
-    have fst' := depth_le (n := max n n') (by omega) fst
-    have cut' := depth_le (n := max n n') (by omega) cut
-    exact ⟨max n n' + 1, ImpL fst' cut'⟩
-  -- harmony-cases
-  | AndR (Γ := Γ) (A := A) (B := B) fst snd, .AndL (Γ := Γ') (A := A') (B := B') D₂' =>
-    if h_eq : A.and B = A'.and B' then
-      rw[←h_eq, cons_inj_right] at ctx
-      rw[←and_eq] at h_eq
-      rw[←h_eq.1, ←h_eq.2, ←ctx] at D₂'
-      have ⟨_, cut⟩ := Cut (Weakening (A := B) fst) D₂'
-      exact Cut snd cut
-    else
-      have ⟨h, eq⟩ := for_commutative ctx h_eq
-      rw[←cons_erase h] at fst snd ⊢
-      have fst' := AndL_inv fst
-      have snd' := AndL_inv snd
-      have D₁' := AndR (AndL_inv fst) (AndL_inv snd)
-      rw[eq, cons_swap_rotate] at D₂'
-      have ⟨k, cut⟩ := Cut D₁' D₂'
-      exact ⟨k + 1, AndL cut⟩
-  | .OrR₀ (Γ := Γ) (A := A) (B := B) D₁', .OrL (Γ := Γ') (A := A') (B := B') fst snd =>
-    if h_eq : A.or B = A'.or B' then
-      rw[←h_eq, cons_inj_right] at ctx
-      rw[←or_eq] at h_eq
-      rw[←h_eq.1, ←ctx] at fst
-      exact Cut D₁' fst
-    else
-      have ⟨h, eq⟩ := for_commutative ctx h_eq
-      rw[←cons_erase h] at D₁' ⊢
-      rw[eq, cons_swap] at fst snd
-      have ⟨fst', snd'⟩ := OrL_inv D₁'
-      have ⟨k₁, cut₁⟩ := Cut (OrR₀ fst') fst
-      have ⟨k₂, cut₂⟩ := Cut (OrR₀ snd') snd
-      have cut₁' := depth_le (n := max k₁ k₂) (by omega) cut₁
-      have cut₂' := depth_le (n := max k₁ k₂) (by omega) cut₂
-      exact ⟨max k₁ k₂ + 1, OrL cut₁' cut₂'⟩
-  | .OrR₁ (Γ := Γ) (A := A) (B := B) D₁', .OrL (Γ := Γ') (A := A') (B := B') fst snd =>
-    if h_eq : A.or B = A'.or B' then
-      rw[←h_eq, cons_inj_right] at ctx
-      rw[←or_eq] at h_eq
-      rw[←h_eq.2, ←ctx] at snd
-      exact Cut D₁' snd
-    else
-      have ⟨h, eq⟩ := for_commutative ctx h_eq
-      rw[←cons_erase h] at D₁' ⊢
-      rw[eq, cons_swap] at fst snd
-      have ⟨fst', snd'⟩ := OrL_inv D₁'
-      have ⟨k₁, cut₁⟩ := Cut (OrR₁ fst') fst
-      have ⟨k₂, cut₂⟩ := Cut (OrR₁ snd') snd
-      have cut₁' := depth_le (n := max k₁ k₂) (by omega) cut₁
-      have cut₂' := depth_le (n := max k₁ k₂) (by omega) cut₂
-      exact ⟨max k₁ k₂ + 1, OrL cut₁' cut₂'⟩
-  | .ImpR (Γ := Γ) (A := A) (B := B) D₁', .ImpL (Γ := Γ') (A := A') (B := B') fst snd =>
-    rename_i hΓ _ _ _ _ hφ
-    subst hΓ hφ
-    if h_eq : A.imp B = A'.imp B' then
-      rw[←h_eq, cons_inj_right] at ctx
-      rw[←imp_eq] at h_eq
-      rw[←h_eq.1, ←h_eq.2, ←ctx] at fst snd
-      have ⟨k₁, cut₁⟩ := Cut D₁ fst
-      have ⟨k₂, cut₂⟩ := Cut cut₁ D₁'
-      have ⟨k₃, cut₃⟩ := Cut (Weakening D₁) snd
-      exact Cut cut₂ cut₃
-    else
-      have ⟨h, eq⟩ := for_commutative ctx h_eq
-      rw[←cons_erase h] at D₁ D₁' ⊢
-      rw[eq, cons_swap] at fst
-      rw[eq, cons_swap_rotate] at snd
-      have ⟨k₁, cut₁⟩ := Cut D₁ fst
-      have ⟨k₂, cut₂⟩ := Cut (Weakening (A := B') D₁).Exchange snd
-      have cut₁' := depth_le (n := max k₁ k₂) (by omega) cut₁
-      have cut₂' := depth_le (n := max k₁ k₂) (by omega) cut₂
-      exact ⟨max k₁ k₂ + 1, ImpL cut₁' cut₂'⟩
-  -- right commutative cases with Right rule
+      exact ⟨0, Id ((men_cons_neq (Ne.symm hp)).mp h)⟩
+  | .TopR, .BotL _ h | .AndR _ _, .BotL _ h | .OrR₀ _, .BotL _ h | .OrR₁ _, .BotL _ h
+  | .ImpR _, .BotL _ h =>
+    subst ctx
+    exact ⟨0, BotL _ (by simpa using h)⟩
+  | _, .TopR => exact ⟨0, TopR⟩
   | D₁, .AndR fst snd =>
-    rw[←ctx] at fst snd
-    have ⟨k₁, cut₁⟩ := Cut D₁ fst
-    have ⟨k₂, cut₂⟩ := Cut D₁ snd
-    have cut₁' := depth_le (n := max k₁ k₂) (by omega) cut₁
-    have cut₂' := depth_le (n := max k₁ k₂) (by omega) cut₂
-    exact ⟨max k₁ k₂ + 1, AndR cut₁' cut₂'⟩
-  | D₁, .OrR₀ D₂' =>
-    rw[←ctx] at D₂'
-    have ⟨k, cut⟩ := Cut D₁ D₂'
-    exact ⟨k + 1, OrR₀ cut⟩
-  | D₁, .OrR₁ D₂' =>
-    rw[←ctx] at D₂'
-    have ⟨k, cut⟩ := Cut D₁ D₂'
-    exact ⟨k + 1, OrR₁ cut⟩
-  | D₁, .ImpR (A := A) D₂' =>
-    rw[←ctx, cons_swap] at D₂'
-    have ⟨k, cut⟩ := Cut (Weakening D₁) D₂'
-    exact ⟨k + 1, ImpR cut⟩
-  -- right commutative cases with Left rule
-  | .OrR₀ (A := A) (B := B) D₁', .AndL (Γ := Γ') (A := A') (B := B') D₂' =>
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw[←cons_erase h] at D₁' ⊢
-    rw[eq, cons_swap_rotate] at D₂'
-    have ⟨k, cut⟩ := Cut (OrR₀ (AndL_inv D₁')) D₂'
-    exact ⟨k + 1, AndL cut⟩
-  | .OrR₁ (A := A) (B := B) D₁', .AndL (Γ := Γ') (A := A') (B := B') D₂' =>
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw[←cons_erase h] at D₁' ⊢
-    rw[eq, cons_swap_rotate] at D₂'
-    have ⟨k, cut⟩ := Cut (OrR₁ (AndL_inv D₁')) D₂'
-    exact ⟨k + 1, AndL cut⟩
-  | .ImpR (A := A) (B := B) D₁', .AndL (Γ := Γ') (A := A') (B := B') D₂' =>
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw[←cons_erase h] at D₁' ⊢
-    rw[eq, cons_swap_rotate] at D₂'
-    rw[cons_swap] at D₁'
-    have D₁'' := AndL_inv D₁'
-    rw[cons_swap_rotate] at D₁''
-    have ⟨k, cut⟩ := Cut (ImpR D₁'') D₂'
-    exact ⟨k + 1, AndL cut⟩
-  | .AndR (A := A) (B := B) fst snd, .OrL (Γ := Γ') (A := A') (B := B') fst' snd' =>
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw[←cons_erase h] at fst snd ⊢
-    rw[eq, cons_swap] at fst' snd'
-    have fst'' := AndL_inv fst'
-    have snd'' := AndL_inv snd'
-    rw[cons_swap_rotate] at fst'' snd''
-    have D₂' := OrL fst'' snd''
-    rw[←cons_swap_rotate] at D₂'
-    have ⟨_, cut⟩ := Cut (Weakening fst) D₂'
-    exact Cut snd cut
-  | .ImpR (A := A) (B := B) D₁', .OrL (Γ := Γ') (A := A') (B := B') fst' snd' =>
-    rename_i hΓ _ _ _ _ hφ
-    subst hΓ hφ
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw[←cons_erase h] at D₁ ⊢
-    rw[eq, cons_swap] at fst' snd'
-    have ⟨k₁, cut₁⟩ := Cut (OrL_inv D₁).1 fst'
-    have ⟨k₂, cut₂⟩ := Cut (OrL_inv D₁).2 snd'
-    have cut₁' := depth_le (n := max k₁ k₂) (by omega) cut₁
-    have cut₂' := depth_le (n := max k₁ k₂) (by omega) cut₂
-    exact ⟨max k₁ k₂ + 1, OrL cut₁' cut₂'⟩
-  | .AndR (A := A) (B := B) fst snd, .ImpL (Γ := Γ') (A := A') (B := B') fst' snd' =>
-    rename_i hΓ _ _ _ _ hφ
-    subst hΓ hφ
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw[←cons_erase h] at D₁ ⊢
-    rw[eq, cons_swap] at fst'
-    rw[eq, cons_swap_rotate] at snd'
-    have ⟨k₁, cut₁⟩ := Cut D₁ fst'
-    have ⟨k₂, cut₂⟩ := Cut (Weakening (A := B') D₁).Exchange snd'
-    have cut₁' := depth_le (n := max k₁ k₂) (by omega) cut₁
-    have cut₂' := depth_le (n := max k₁ k₂) (by omega) cut₂
-    exact ⟨max k₁ k₂ + 1, ImpL cut₁' cut₂'⟩
-  | .OrR₀ (A := A) (B := B) D₁', .ImpL (Γ := Γ') (A := A') (B := B') fst' snd' =>
-    rename_i hΓ _ _ _ _ hφ
-    subst hΓ hφ
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw[←cons_erase h] at D₁ D₁' ⊢
-    rw[eq, cons_swap] at fst'
-    rw[eq, cons_swap_rotate] at snd'
-    have ⟨k₁, cut₁⟩ := Cut D₁ fst'
-    have ⟨k₂, cut₂⟩ := Cut (Weakening (A := B') D₁).Exchange snd'
-    have cut₁' := depth_le (n := max k₁ k₂) (by omega) cut₁
-    have cut₂' := depth_le (n := max k₁ k₂) (by omega) cut₂
-    exact ⟨max k₁ k₂ + 1, ImpL cut₁' cut₂'⟩
-  | .OrR₁ (A := A) (B := B) D₁', .ImpL (Γ := Γ') (A := A') (B := B') fst' snd' =>
-    rename_i hΓ _ _ _ _ hφ
-    subst hΓ hφ
-    have ⟨h, eq⟩ := for_commutative ctx (by simp)
-    rw[←cons_erase h] at D₁ D₁' ⊢
-    rw[eq, cons_swap] at fst'
-    rw[eq, cons_swap_rotate] at snd'
-    have ⟨k₁, cut₁⟩ := Cut D₁ fst'
-    have ⟨k₂, cut₂⟩ := Cut (Weakening (A := B') D₁).Exchange snd'
-    have cut₁' := depth_le (n := max k₁ k₂) (by omega) cut₁
-    have cut₂' := depth_le (n := max k₁ k₂) (by omega) cut₂
-    exact ⟨max k₁ k₂ + 1, ImpL cut₁' cut₂'⟩
+    subst ctx
+    have E₁ := Cut D₁ fst
+    have E₂ := Cut D₁ snd
+    exact ⟨max E₁.1 E₂.1 + 1,
+      AndR (depth_le (Nat.le_max_left _ _) E₁.2) (depth_le (Nat.le_max_right _ _) E₂.2)⟩
+  | D₁, .OrR₀ D =>
+    subst ctx
+    exact ⟨_, OrR₀ (Cut D₁ D).2⟩
+  | D₁, .OrR₁ D =>
+    subst ctx
+    exact ⟨_, OrR₁ (Cut D₁ D).2⟩
+  | D₁, .ImpR (n := m) (A := A) (B := B) D =>
+    subst ctx
+    have D' : Derivation' m (φ ::ₘ A ::ₘ Γ) B := D.Exchange
+    exact ⟨_, ImpR (Cut (Weakening (A := A) D₁) D').2⟩
+  | D₁, .AndL (n := m) (A := A) (B := B) (Γ := Δ') D =>
+    if h : φ = A.and B then
+      subst h
+      rw [cons_inj_right] at ctx
+      subst ctx
+      have D' : Derivation' m (B ::ₘ A ::ₘ Γ) ψ := D.Exchange
+      have E := Cut (Weakening (A := A) (AndR_inv D₁).2) D'
+      exact Cut (AndR_inv D₁).1 E.2
+    else
+      obtain ⟨h_mem, rfl⟩ := for_commutative ctx h
+      have D' : Derivation' m (φ ::ₘ A ::ₘ B ::ₘ Γ.erase (A.and B)) ψ := D.Exchange
+      have E := Cut (AndL_inv_mem h_mem D₁) D'
+      rw [← cons_erase h_mem]
+      exact ⟨_, AndL E.2⟩
+  | .OrR₀ (A := A) (B := B) d, .OrL (A := C) (B := E) (Γ := Δ') fst snd =>
+    if h : A.or B = C.or E then
+      rw [← or_eq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      rw [cons_inj_right] at ctx
+      subst ctx
+      exact Cut d fst
+    else
+      obtain ⟨h_mem, rfl⟩ := for_commutative ctx h
+      rw [cons_swap] at fst snd
+      have D' := OrL_inv_mem h_mem (OrR₀ (B := B) d)
+      have E₁ := Cut D'.1 fst
+      have E₂ := Cut D'.2 snd
+      rw [← cons_erase h_mem]
+      exact ⟨max E₁.1 E₂.1 + 1,
+        OrL (depth_le (Nat.le_max_left _ _) E₁.2) (depth_le (Nat.le_max_right _ _) E₂.2)⟩
+  | .OrR₁ (A := A) (B := B) d, .OrL (A := C) (B := E) (Γ := Δ') fst snd =>
+    if h : A.or B = C.or E then
+      rw [← or_eq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      rw [cons_inj_right] at ctx
+      subst ctx
+      exact Cut d snd
+    else
+      obtain ⟨h_mem, rfl⟩ := for_commutative ctx h
+      rw [cons_swap] at fst snd
+      have D' := OrL_inv_mem h_mem (OrR₁ (A := A) d)
+      have E₁ := Cut D'.1 fst
+      have E₂ := Cut D'.2 snd
+      rw [← cons_erase h_mem]
+      exact ⟨max E₁.1 E₂.1 + 1,
+        OrL (depth_le (Nat.le_max_left _ _) E₁.2) (depth_le (Nat.le_max_right _ _) E₂.2)⟩
+  | .TopR (n := k), .OrL (A := C) (B := E) (Γ := Δ') fst snd =>
+    obtain ⟨h_mem, rfl⟩ := for_commutative ctx (by simp)
+    rw [cons_swap] at fst snd
+    have D' := OrL_inv_mem h_mem (TopR (n := k))
+    have E₁ := Cut D'.1 fst
+    have E₂ := Cut D'.2 snd
+    rw [← cons_erase h_mem]
+    exact ⟨max E₁.1 E₂.1 + 1,
+      OrL (depth_le (Nat.le_max_left _ _) E₁.2) (depth_le (Nat.le_max_right _ _) E₂.2)⟩
+  | .AndR a b, .OrL (A := C) (B := E) (Γ := Δ') fst snd =>
+    obtain ⟨h_mem, rfl⟩ := for_commutative ctx (by simp)
+    rw [cons_swap] at fst snd
+    have D' := OrL_inv_mem h_mem (AndR a b)
+    have E₁ := Cut D'.1 fst
+    have E₂ := Cut D'.2 snd
+    rw [← cons_erase h_mem]
+    exact ⟨max E₁.1 E₂.1 + 1,
+      OrL (depth_le (Nat.le_max_left _ _) E₁.2) (depth_le (Nat.le_max_right _ _) E₂.2)⟩
+  | .ImpR a, .OrL (A := C) (B := E) (Γ := Δ') fst snd =>
+    obtain ⟨h_mem, rfl⟩ := for_commutative ctx (by simp)
+    rw [cons_swap] at fst snd
+    have D' := OrL_inv_mem h_mem (ImpR a)
+    have E₁ := Cut D'.1 fst
+    have E₂ := Cut D'.2 snd
+    rw [← cons_erase h_mem]
+    exact ⟨max E₁.1 E₂.1 + 1,
+      OrL (depth_le (Nat.le_max_left _ _) E₁.2) (depth_le (Nat.le_max_right _ _) E₂.2)⟩
+  | D₁, .ImpL (n := m) (A := C) (B := E) (Γ := Δ') fst snd =>
+    if h : φ = C.imp E then
+      subst h
+      rw [cons_inj_right] at ctx
+      subst ctx
+      have E₁ := Cut D₁ fst
+      have E₂ := Cut (Weakening (A := E) D₁) snd
+      have E₃ := Cut E₁.2 (ImpR_inv D₁)
+      exact Cut E₃.2 E₂.2
+    else
+      obtain ⟨h_mem, rfl⟩ := for_commutative ctx h
+      have fst' : Derivation' m (φ ::ₘ C.imp E ::ₘ Γ.erase (C.imp E)) C := fst.Exchange
+      have snd' : Derivation' m (φ ::ₘ C.imp E ::ₘ E ::ₘ Γ.erase (C.imp E)) ψ := snd.Exchange
+      have D₁' : Derivation' n₁ (C.imp E ::ₘ Γ.erase (C.imp E)) φ := by
+        rw [cons_erase h_mem]; exact D₁
+      have D₁'' : Derivation' n₁ (C.imp E ::ₘ E ::ₘ Γ.erase (C.imp E)) φ :=
+        (Weakening (A := E) D₁').Exchange
+      have E₁ := Cut D₁' fst'
+      have E₂ := Cut D₁'' snd'
+      rw [← cons_erase h_mem]
+      exact ⟨max E₁.1 E₂.1 + 1,
+        ImpL (depth_le (Nat.le_max_left _ _) E₁.2) (depth_le (Nat.le_max_right _ _) E₂.2)⟩
   termination_by (φ.size, n₁ + n₂)
   decreasing_by
-  all_goals
-    subst_vars
-    rw [Prod.lex_def]
-    dsimp only [size]
-    omega
+    all_goals
+      subst_vars
+      first
+        | (apply Prod.Lex.right; omega)
+        | (apply Prod.Lex.left; simp only [Formula.size]; omega)
 
 end Derivation'
 
