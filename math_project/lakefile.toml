@@ -20,3 +20,6 @@ scope = "leanprover-community"
 
 [[lean_lib]]
 name = "MathProject"
+
+[[lean_lib]]
+name = "AI_SANDBOX"

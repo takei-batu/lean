@@ -24,28 +24,13 @@ def size : Formula → Nat
   | or A B => size A + size B + 1
 
 theorem and_eq : A = A' ∧ B = B' ↔ and A B = and A' B' := by
-  constructor
-  · intro ⟨hA, hB⟩
-    rw[hA, hB]
-  · intro h
-    injection h with hA hB
-    exact ⟨hA, hB⟩
+  sorry
 
 theorem or_eq : A = A' ∧ B = B' ↔ or A B = or A' B' := by
-  constructor
-  · intro ⟨hA, hB⟩
-    rw[hA, hB]
-  · intro h
-    injection h with hA hB
-    exact ⟨hA, hB⟩
+  sorry
 
 theorem imp_eq : A = A' ∧ B = B' ↔ imp A B = imp A' B' := by
-  constructor
-  · intro ⟨hA, hB⟩
-    rw[hA, hB]
-  · intro h
-    injection h with hA hB
-    exact ⟨hA, hB⟩
+  sorry
 
 end Formula
 

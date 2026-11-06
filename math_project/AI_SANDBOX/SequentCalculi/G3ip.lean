@@ -2,7 +2,7 @@ import Mathlib.Order.Defs.LinearOrder
 import Mathlib.Data.Multiset.Basic
 import Mathlib.Data.Multiset.ZeroCons
 import Mathlib.Data.Multiset.AddSub
-import MathProject.ProofTheory.Propositional.formula
+import AI_SANDBOX.Propositional.formula
 
 /-! G3ip for base of inv system -/
 namespace G3ip

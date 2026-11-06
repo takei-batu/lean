@@ -4,5 +4,6 @@
         "^G3ip": "ᴳ³ⁱᵖ",
         "^LK": "ᴸᴷ",
         "^LJ": "ᴸᴶ",
-    }
+    },
+    "claudeCode.enableReopenClosedSessionShortcut": false
 }

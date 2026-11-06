@@ -1,0 +1,17 @@
+{
+  "permissions": {
+		"deny": [
+			"Bash(**)",
+			"Terminal(**)",
+			"Run(**)",
+			// "Read(//**/.env*)",
+			"Read(//**/.git/**)",
+			"Read(//**/.vscode/**)",
+			"Read(//**/.lake/**)",
+			"Read(//**/.lean_game/**)",
+			"Read(//**/MathProject/**)",
+			"Read(//**/test/**)"
+		]
+  },
+  "customInstructions": "Follow CLAUDE.md !"
+}
