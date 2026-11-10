@@ -1,5 +1,5 @@
 import Mathlib.Order.Defs.PartialOrder
-import MathProject.ProofTheory.Adjoint.Mode
+import MathProject.ProofTheory.Adjoint.mode
 
 /-!
 # Adjoint Logic Formulas
@@ -19,19 +19,22 @@ inductive Formula : M → Type where
   | Up {k : M} : k ≤ m → Formula k → Formula m
   | Down {l : M} : m ≤ l → Formula l → Formula m
 
+/- tuple Formula and Mode -/
 abbrev MFormula (M : Type) [Preorder M] := Σ m : M, Formula m
 
+open List
 open Formula
 namespace Formula
 
-variable {M : Type} [Preorder M] [DecidableEq M] [ToString M]
+variable {M : Type} [Preorder M]
 
 def getMode {m : M} : Formula m → M
   | Up (k := k) _ _ => k
   | Down (l := l) _ _ => l
   | _ => m
 
-def decEq {m : M} : (φ ψ : Formula m) → Decidable (φ = ψ) := by
+/- Decidable Formula m -/
+def decEq {m : M} [DecidableEq M] : (φ ψ : Formula m) → Decidable (φ = ψ) := by
   intro φ ψ
   cases φ <;> cases ψ
   -- Atom
@@ -98,8 +101,7 @@ def decEq {m : M} : (φ ψ : Formula m) → Decidable (φ = ψ) := by
       )
   all_goals
     exact isFalse (fun h => by cases h)
-
-instance {m : M} : DecidableEq (Formula m) := decEq
+instance {m : M} [DecidableEq M] : DecidableEq (Formula m) := decEq
 
 /- size of Formula (i.e. the number of connectives) -/
 @[simp]
@@ -115,19 +117,22 @@ def size {m : M} : Formula m → Nat
   | Up _ _ => 1
   | Down _ _ => 1
 
+/- general Plus -/
 def Plus_n {m : M} (ℱ : List (Formula m)) : Formula m :=
   match ℱ with
   | [] => .Zero
   | A :: [] => A
   | A :: rest => .Plus A (Plus_n rest)
 
+/- general With -/
 def With_n {m : M} (ℱ : List (Formula m)) : Formula m :=
   match ℱ with
   | [] => .Top
   | A :: [] => A
   | A :: rest => .With A (With_n rest)
 
-def toString {m : M} : Formula m → String
+/- ToString Formula m -/
+def toString {m : M} [ToString M] : Formula m → String
   | .Atom p => s!"{p}({m})"
   | .Imp A B => s!"({toString A} ⊸({m}) {toString B})"
   | .Tensor A B => s!"({toString A} ⊗({m}) {toString B})"
@@ -138,20 +143,65 @@ def toString {m : M} : Formula m → String
   | .Top => s!"⊤({m})"
   | .Up (k := k) _ A => s!"(↑({k},{m}){toString A})"
   | .Down (l := l) _ A => s!"(↓({l},{m}){toString A})"
-
-instance {m : M} : ToString (Formula m) where
+instance {m : M} [ToString M] : ToString (Formula m) where
   toString := Formula.toString
-
-instance {m : M} : Repr (Formula m) where
-  reprPrec f _ := Formula.toString f
 
 /- encapsulation of mode -/
 def hideMode {m : M} (A : Formula m) : Σ m : M, Formula m := ⟨m, A⟩
 
-set_option linter.unusedDecidableInType false in
 theorem mode_eq {m : M} (A : Formula m) : (hideMode A).1 = getMode A := by
   rw[hideMode]
   sorry
+
+/- declaration of independence -/
+abbrev DoI (Γ : List (MFormula M)) (k : M) : Prop := ∀ 𝒜 ∈ Γ, 𝒜.1 ≥ k
+
+/- using Γ ≥ k ↔ ∀ 𝒜 ∈ Γ, 𝒜.1 ≥ k -/
+infix:50 " ≥ₘ " => DoI
+
+theorem DoI_cons {k 𝒜} {Γ : List (MFormula M)} : 𝒜 :: Γ ≥ₘ k → Γ ≥ₘ k := by
+  intro h x hx
+  exact h x (mem_cons_of_mem 𝒜 hx)
+
+theorem DoI_erase [DecidableEq M] {k 𝒜} {Γ : List (MFormula M)} : Γ ≥ₘ k → Γ.erase 𝒜 ≥ₘ k := by
+  intro h x hx
+  exact h x (mem_of_mem_erase hx)
+
+theorem Imp_eq {m : M} {A B : Formula m} {C D : Formula m} :
+  A.Imp B = C.Imp D ↔ A = C ∧ B = D := by
+  constructor
+  · intro h
+    injection h with _ hA hB
+    exact ⟨hA, hB⟩
+  · intro ⟨hA, hB⟩
+    rw[hA, hB]
+
+theorem Tensor_eq {m : M} {A B : Formula m} {C D : Formula m} :
+  A.Tensor B = C.Tensor D ↔ A = C ∧ B = D := by
+  constructor
+  · intro h
+    injection h with _ hA hB
+    exact ⟨hA, hB⟩
+  · intro ⟨hA, hB⟩
+    rw[hA, hB]
+
+theorem Plus_eq {m : M} {A B : Formula m} {C D : Formula m} :
+  A.Plus B = C.Plus D ↔ A = C ∧ B = D := by
+  constructor
+  · intro h
+    injection h with _ hA hB
+    exact ⟨hA, hB⟩
+  · intro ⟨hA, hB⟩
+    rw[hA, hB]
+
+theorem With_eq {m : M} {A B : Formula m} {C D : Formula m} :
+  A.With B = C.With D ↔ A = C ∧ B = D := by
+  constructor
+  · intro h
+    injection h with _ hA hB
+    exact ⟨hA, hB⟩
+  · intro ⟨hA, hB⟩
+    rw[hA, hB]
 
 end Formula
 
