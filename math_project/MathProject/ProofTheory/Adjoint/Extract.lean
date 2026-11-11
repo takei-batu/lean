@@ -158,3 +158,18 @@ def extractList_symm {α : Type} :
 | _, _, .cons (ext := ext) extl =>
   let ih := extractList_symm extl
   extractList_trans (extractList_of_extract ext) (.cons (ext := .head) ih)
+
+/-- ExtractList L L' [] ならば、右側に L'' を付けた ExtractList L (L' ++ L'') L'' が成り立つ -/
+@[instance_reducible]
+def extractList_append_right_rem {α : Type} :
+    {L L' : List α} → (ExtractList L L' []) → (L'' : List α) → ExtractList L (L' ++ L'') L''
+  | _, _, .nil, _ => ExtractList.nil
+  | _, _, .cons (ext := ext) extl, L'' =>
+    ExtractList.cons (ext := instExtractAppendLeft (L₂ := L'') (ext := ext)) (extractList_append_right_rem extl L'')
+
+@[instance_reducible]
+def extractList_append_left_rem {α : Type} :
+    {L L' : List α} → (ExtractList L L' []) → (L'' : List α) → ExtractList L (L'' ++ L') L''
+  | _, _, .nil, _ => by rw [List.append_nil]; exact ExtractList.nil
+  | _, _, .cons (ext := ext) extl, L'' =>
+    ExtractList.cons (ext := instExtractAppendRight (L₁ := L'') (ext := ext)) (extractList_append_left_rem extl L'')

@@ -30,50 +30,20 @@ variable {M : Type} [Preorder M]
 
 /-- cons_n n x Γ₂ から Φ₁ を抜いた残りが Φ₂ ならば、
     x は Φ₁ に i 個、Φ₂ に j 個分配され、i + j = n となる -/
-structure ExtractListConsNSplit (𝒜 : MFormula M)
-(n : Nat) (Γ₂ Φ₁ Φ₂ : List (MFormula M)) : Type where
+structure PermConsNSplit (𝒜 : MFormula M)
+    (n : Nat) (Γ₂ Φ₁ Φ₂ : List (MFormula M)) : Type where
   i : Nat
   j : Nat
   sum_eq : i + j = n
   Φ₁' : List (MFormula M)
   Φ₂' : List (MFormula M)
-  perm₁ : PermList (cons_n i 𝒜 Φ₁') Φ₁
-  eq₂ : Φ₂ = cons_n j 𝒜 Φ₂'
-  extl : ExtractList Φ₁' Γ₂ Φ₂'
+  perm_Γ : PermList (Φ₁' ++ Φ₂') Γ₂
+  perm_Φ₁ : PermList (cons_n i 𝒜 Φ₁') Φ₁
+  perm_Φ₂ : PermList (cons_n j 𝒜 Φ₂') Φ₂
 
 /-- n ステップの文脈分割定理 -/
-def extractList_cons_n_split (𝒜 : MFormula M) :
-    (n : Nat) → {Γ₂ Φ₁ Φ₂ : List (MFormula M)} →
-    (h : ExtractList Φ₁ (cons_n n 𝒜 Γ₂) Φ₂) →
-    ExtractListConsNSplit 𝒜 n Γ₂ Φ₁ Φ₂
-| 0, _, _, _, h =>
-  { i := 0
-    j := 0
-    sum_eq := rfl
-    Φ₁' := _
-    Φ₂' := _
-    perm₁ := extractList_refl
-    eq₂ := rfl
-    extl := h }
-| n + 1, Γ₂, Φ₁, Φ₂, h =>
-  match extractList_cons_split h with
-  | ExtractListConsSplit.in_right heq h_tail =>
-    let rec_res := extractList_cons_n_split 𝒜 n h_tail
-    { i := rec_res.i
-      j := rec_res.j + 1
-      sum_eq := by have := rec_res.sum_eq; omega
-      Φ₁' := rec_res.Φ₁'
-      Φ₂' := rec_res.Φ₂'
-      perm₁ := rec_res.perm₁
-      eq₂ := heq.trans (congrArg (𝒜 :: ·) rec_res.eq₂)
-      extl := rec_res.extl }
-  | ExtractListConsSplit.in_left hx h_tail =>
-    let rec_res := extractList_cons_n_split 𝒜 n h_tail
-    { i := rec_res.i + 1
-      j := rec_res.j
-      sum_eq := by have := rec_res.sum_eq; omega
-      Φ₁' := rec_res.Φ₁'
-      Φ₂' := rec_res.Φ₂'
-      perm₁ := ExtractList.cons (ext := hx) rec_res.perm₁
-      eq₂ := rec_res.eq₂
-      extl := rec_res.extl }
+def perm_cons_n_split {M : Type} [Preorder M] (𝒜 : MFormula M)
+    (n : Nat) {Γ₂ Φ₁ Φ₂ : List (MFormula M)}
+    (h : PermList (Φ₁ ++ Φ₂) (cons_n n 𝒜 Γ₂)) :
+    PermConsNSplit 𝒜 n Γ₂ Φ₁ Φ₂ := by
+  sorry

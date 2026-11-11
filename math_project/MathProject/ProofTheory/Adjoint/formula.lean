@@ -159,13 +159,24 @@ abbrev DoI (Γ : List (MFormula M)) (k : M) : Prop := ∀ 𝒜 ∈ Γ, 𝒜.1 �
 /- using Γ ≥ k ↔ ∀ 𝒜 ∈ Γ, 𝒜.1 ≥ k -/
 infix:50 " ≥ₘ " => DoI
 
-theorem DoI_cons {k 𝒜} {Γ : List (MFormula M)} : 𝒜 :: Γ ≥ₘ k → Γ ≥ₘ k := by
+theorem DoI.cons {m 𝒜} {Γ : List (MFormula M)} : 𝒜 :: Γ ≥ₘ m → Γ ≥ₘ m := by
   intro h x hx
   exact h x (mem_cons_of_mem 𝒜 hx)
 
-theorem DoI_erase [DecidableEq M] {k 𝒜} {Γ : List (MFormula M)} : Γ ≥ₘ k → Γ.erase 𝒜 ≥ₘ k := by
-  intro h x hx
-  exact h x (mem_of_mem_erase hx)
+theorem DoI.append {m : M} {Γ Γ' : List (MFormula M)} :
+  Γ ++ Γ' ≥ₘ m ↔ Γ ≥ₘ m ∧ Γ' ≥ₘ m := by
+  constructor
+  · intro h
+    constructor
+    all_goals
+    intro x hx
+    exact h x (by grind)
+  · intro ⟨h, h'⟩ x hx
+    simp only [mem_append] at hx
+    rcases hx with left | right
+    · exact h x (by assumption)
+    · exact h' x (by assumption)
+
 
 theorem Imp_eq {m : M} {A B : Formula m} {C D : Formula m} :
   A.Imp B = C.Imp D ↔ A = C ∧ B = D := by
