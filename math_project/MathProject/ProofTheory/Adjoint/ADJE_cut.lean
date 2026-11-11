@@ -7,7 +7,7 @@ open List Formula ADJE Derivation
 
 variable {M : Type} [Preorder M]
 
--- set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 1000000 in
 -- Relaxed maxHeartbeats to verify massive pattern matching and termination proofs.
 def Multicut [perm : PermList (Γ₁ ++ Γ₂) Γ] [HasSigma M]
   {m k : M} {φ : Formula m} {C : Formula k}
@@ -133,6 +133,6 @@ decreasing_by
   all_goals
     subst_vars
     simp only [Prod.lex_def]
-    sorry
     -- dsimp only [Formula.size, Derivation.size]
     -- omega
+    sorry
